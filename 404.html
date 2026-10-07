@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>页面不存在 · 2901 Space</title>
+<style>
+    :root {
+        --bg: #E5FBFF;
+        --text: #222;
+        --text-muted: #666;
+        --border: #333;
+        --highlight-bg: #D9D9D9;
+        --highlight-text: #EE0000;
+    }
+    html[data-theme="dark"] {
+        --bg: #12161A;
+        --text: #E6E6E6;
+        --text-muted: #9AA0A6;
+        --border: #E6E6E6;
+        --highlight-bg: #3A3A3A;
+        --highlight-text: #FF6B6B;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+        background: var(--bg);
+        color: var(--text);
+        font-family: "华文中宋", "STZhongsong", "SimSun", serif;
+        line-height: 1.8;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+        text-align: center;
+        transition: background 0.3s, color 0.3s;
+    }
+
+    .box { max-width: 520px; }
+
+    .code {
+        font-size: 5em;
+        font-weight: normal;
+        line-height: 1;
+        margin-bottom: 16px;
+        color: var(--highlight-text);
+        background: var(--highlight-bg);
+        display: inline-block;
+        padding: 10px 28px;
+        border-radius: 12px;
+    }
+
+    .title {
+        font-size: 1.6em;
+        font-weight: normal;
+        margin-bottom: 12px;
+    }
+
+    .desc {
+        font-size: 1em;
+        color: var(--text-muted);
+        margin-bottom: 36px;
+    }
+
+    .back {
+        display: inline-block;
+        padding: 12px 28px;
+        font-size: 1em;
+        color: var(--text);
+        background: var(--bg);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        text-decoration: none;
+        transition: background 0.2s, color 0.2s;
+    }
+    .back:hover {
+        background: var(--highlight-bg);
+        color: var(--highlight-text);
+    }
+
+    #themeToggle {
+        position: fixed;
+        top: 20px; right: 20px;
+        width: 44px; height: 44px;
+        border-radius: 50%;
+        border: 1px solid var(--border);
+        background: var(--bg);
+        color: var(--text);
+        font-size: 1.2em;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        transition: background 0.2s, transform 0.2s;
+        z-index: 999;
+    }
+    #themeToggle:hover { background: var(--highlight-bg); transform: scale(1.08); }
+</style>
+</head>
+<body>
+
+    <button id="themeToggle" title="切换深色/浅色模式">🌙</button>
+
+    <div class="box">
+        <div class="code">404</div>
+        <h1 class="title">页面不存在</h1>
+        <p class="desc">你访问的页面可能已被移除、改名，或者从未存在过。</p>
+        <a class="back" href="https://pillager-outpost.github.io/2901space/">← 返回首页</a>
+    </div>
+
+    <script>
+        function safeGet(k){ try { return localStorage.getItem(k); } catch(e){ return null; } }
+        function safeSet(k,v){ try { localStorage.setItem(k,v); } catch(e){} }
+
+        var themeToggle = document.getElementById('themeToggle');
+        var root = document.documentElement;
+
+        function applyTheme(t){
+            root.setAttribute('data-theme', t);
+            if (themeToggle) themeToggle.textContent = t === 'dark' ? '☀️' : '🌙';
+        }
+        function getInitialTheme(){
+            var s = safeGet('theme');
+            if (s === 'dark' || s === 'light') return s;
+            try { return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'; }
+            catch(e){ return 'light'; }
+        }
+        applyTheme(getInitialTheme());
+        if (themeToggle){
+            themeToggle.addEventListener('click', function(){
+                var cur = root.getAttribute('data-theme');
+                var next = cur === 'dark' ? 'light' : 'dark';
+                applyTheme(next);
+                safeSet('theme', next);
+            });
+        }
+    </script>
+</body>
+</html>
