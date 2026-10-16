@@ -103,7 +103,71 @@
 
     a:hover { color: var(--highlight-text); border-bottom-color: var(--highlight-text); }
 
-    /* 页脚 */
+    /* ========== 下载下拉 ========== */
+    .download {
+        margin: 16px 0 24px;
+    }
+
+    .download summary {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 20px;
+        font-size: 1.05em;
+        color: var(--btn-text);
+        background: var(--btn-bg);
+        border-radius: 10px;
+        cursor: pointer;
+        list-style: none;
+        user-select: none;
+        transition: background 0.2s, transform 0.1s;
+    }
+
+    .download summary::-webkit-details-marker { display: none; }
+
+    .download summary::after {
+        content: "▾";
+        font-size: 0.9em;
+        transition: transform 0.2s;
+    }
+
+    .download[open] summary::after {
+        transform: rotate(180deg);
+    }
+
+    .download summary:hover {
+        background: var(--btn-hover);
+        color: #fff;
+    }
+
+    .download-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 12px;
+        padding-left: 4px;
+    }
+
+    .download-list a {
+        display: inline-block;
+        padding: 8px 18px;
+        font-size: 1em;
+        color: var(--text);
+        background: var(--bg);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        text-decoration: none;
+        border-bottom: 1px solid var(--border);
+        transition: background 0.2s, color 0.2s;
+    }
+
+    .download-list a:hover {
+        background: var(--highlight-bg);
+        color: var(--highlight-text);
+        border-color: var(--highlight-text);
+    }
+
+    /* ========== 页脚 ========== */
     .footer {
         margin-top: 70px;
         color: var(--text-muted);
@@ -111,7 +175,37 @@
         transition: color 0.3s;
     }
 
-    /* 返回顶部 */
+    /* ========== 底部工具栏 ========== */
+    .toolbar {
+        margin-top: 40px;
+        padding-top: 24px;
+        border-top: 1px solid var(--border);
+        display: flex;
+        flex-wrap: wrap;
+        gap: 16px 24px;
+        align-items: center;
+        transition: border-color 0.3s;
+    }
+
+    .btn {
+        padding: 8px 16px;
+        border-radius: 8px;
+        border: 1px solid var(--border);
+        background: var(--bg);
+        color: var(--text);
+        font-size: 0.95em;
+        font-family: inherit;
+        cursor: pointer;
+        transition: background 0.2s, color 0.2s, border-color 0.3s;
+        white-space: nowrap;
+    }
+
+    .btn:hover {
+        background: var(--highlight-bg);
+        color: var(--highlight-text);
+    }
+
+    /* ========== 返回顶部 ========== */
     #backToTop {
         position: fixed;
         right: 24px; bottom: 24px;
@@ -133,27 +227,6 @@
     #backToTop:hover { background: var(--btn-hover); transform: translateY(-3px); }
     #backToTop.show { display: flex; }
 
-    /* 主题切换按钮（悬浮右上角） */
-    #themeToggle {
-        position: fixed;
-        top: 20px; right: 20px;
-        width: 44px; height: 44px;
-        border-radius: 50%;
-        border: 1px solid var(--border);
-        background: var(--bg);
-        color: var(--text);
-        font-size: 1.2em;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-        transition: background 0.2s, transform 0.2s, border-color 0.3s;
-        z-index: 999;
-    }
-
-    #themeToggle:hover { background: var(--highlight-bg); transform: scale(1.08); }
-
     /* ========== 响应式 ========== */
     @media (max-width: 600px) {
         body { padding: 24px 14px; }
@@ -161,15 +234,14 @@
         .subtitle { font-size: 1.3em; }
         .section-title { font-size: 1.5em; }
         p { font-size: 1em; }
+        .toolbar { flex-direction: column; align-items: flex-start; gap: 14px; }
+        .download-list { flex-direction: column; align-items: flex-start; }
+        .download-list a { width: 100%; text-align: center; }
         #backToTop { right: 16px; bottom: 16px; width: 42px; height: 42px; font-size: 1.2em; }
-        #themeToggle { top: 14px; right: 14px; width: 38px; height: 38px; font-size: 1em; }
     }
 </style>
 </head>
 <body>
-
-    <!-- 主题切换按钮 -->
-    <button id="themeToggle" title="切换深色/浅色模式" aria-label="切换深色/浅色模式">🌙</button>
 
     <div class="container">
 
@@ -190,15 +262,33 @@
 
         <!-- 链接 -->
         <h2 class="section-title">链接</h2>
+
         <p>2901 图库（未完成）</p>
+
+        <!-- 2901 Island 下载 -->
+        <details class="download">
+            <summary>⬇ 2901 Island 下载</summary>
+            <div class="download-list">
+                <a href="https://pillager-outpost.github.io/2901space/windows.zip" download>Windows</a>
+                <a href="https://pillager-outpost.github.io/2901space/android.zip" download>Android</a>
+                <a href="https://pillager-outpost.github.io/2901space/macos.zip" download>macOS</a>
+                <a href="https://pillager-outpost.github.io/2901space/ubuntu.zip" download>Ubuntu</a>
+            </div>
+        </details>
+
         <p><a href="https://github.com/Pillager-Outpost/2901space/issues/1" title="点击前往">反馈问题 &amp; 建议</a></p>
 
         <!-- 页脚 -->
         <div class="footer">
             <p>页面版本：v1</p>
-            <p>制作：刘智中</p>
+            <p>制作：刘智中（<a href="https://pillager-outpost.github.io/" title="个人主页">个人主页</a>）</p>
             <p>鸣谢：DeepSeek v4.1 Flash, GitHub Pages</p>
             <p>下次可能的更新：生物错题统计页面</p>
+        </div>
+
+        <!-- ========== 底部工具栏 ========== -->
+        <div class="toolbar">
+            <button id="themeToggle" class="btn" title="切换深色/浅色模式">🌙 深色模式</button>
         </div>
 
     </div>
@@ -247,7 +337,7 @@
         function applyTheme(theme) {
             root.setAttribute('data-theme', theme);
             if (themeToggle) {
-                themeToggle.textContent = theme === 'dark' ? '☀️' : '🌙';
+                themeToggle.textContent = theme === 'dark' ? '☀️ 浅色模式' : '🌙 深色模式';
             }
         }
 
