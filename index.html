@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>2901 Space</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏝️</text></svg>">
 <style>
     :root {
         --bg1: #E0F2FE;
@@ -215,6 +216,55 @@
         transform: translateX(0) translateY(-2px) !important;
     }
 
+    /* 哈希信息 */
+    .hash-info {
+        margin-top: 16px;
+        font-size: 0.85em;
+        color: var(--text-muted);
+        line-height: 1.6;
+    }
+    .hash-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-top: 6px;
+    }
+    .hash-info code {
+        font-family: "Consolas", "Courier New", monospace;
+        font-size: 0.9em;
+        color: var(--text);
+        background: rgba(255, 255, 255, 0.5);
+        padding: 3px 8px;
+        border-radius: 6px;
+        word-break: break-all;
+        user-select: all;
+    }
+    html[data-theme="dark"] .hash-info code {
+        background: rgba(255, 255, 255, 0.08);
+    }
+    .copy-hash {
+        padding: 4px 12px;
+        font-size: 0.85em;
+        font-family: inherit;
+        color: var(--accent);
+        background: transparent;
+        border: 1px solid var(--accent);
+        border-radius: 6px;
+        cursor: pointer;
+        transition: background 0.2s, color 0.2s, border-color 0.2s;
+        white-space: nowrap;
+    }
+    .copy-hash:hover {
+        background: var(--accent);
+        color: #fff;
+    }
+    .copy-hash.copied {
+        background: #10B981;
+        border-color: #10B981;
+        color: #fff;
+    }
+
     .footer { color: var(--text-muted); font-size: 0.95em; }
 
     .btn {
@@ -266,6 +316,7 @@
         p { font-size: 1em; }
         .download-inner { flex-direction: column; }
         .download-inner a { width: 100%; text-align: center; }
+        .hash-info { font-size: 0.8em; }
         #backToTop { right: 16px; bottom: 16px; width: 44px; height: 44px; }
     }
 </style>
@@ -301,6 +352,14 @@
                         <a href="https://pillager-outpost.github.io/2901space/macos.zip" download>macOS</a>
                         <a href="https://pillager-outpost.github.io/2901space/ubuntu.zip" download>Ubuntu</a>
                     </div>
+                </div>
+            </div>
+
+            <div class="hash-info">
+                <span>Windows 文件 SHA256：</span>
+                <div class="hash-row">
+                    <code id="winHash">791B3E4E25ED0888B625727D6E941C8217477B3086100A4C1C07AEECE140CC11</code>
+                    <button class="copy-hash" type="button" data-target="winHash">复制</button>
                 </div>
             </div>
 
@@ -370,6 +429,45 @@
                     });
                 }
             });
+        }
+
+        // ========== 复制哈希 ==========
+        document.querySelectorAll('.copy-hash').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                var targetId = btn.getAttribute('data-target');
+                var target = document.getElementById(targetId);
+                if (!target) return;
+                var text = target.textContent.trim();
+
+                function done() {
+                    btn.textContent = '已复制 ✓';
+                    btn.classList.add('copied');
+                    setTimeout(function () {
+                        btn.textContent = '复制';
+                        btn.classList.remove('copied');
+                    }, 1500);
+                }
+
+                if (navigator.clipboard && window.isSecureContext) {
+                    navigator.clipboard.writeText(text).then(done).catch(function () {
+                        fallbackCopy(text, done);
+                    });
+                } else {
+                    fallbackCopy(text, done);
+                }
+            });
+        });
+
+        function fallbackCopy(text, callback) {
+            var ta = document.createElement('textarea');
+            ta.value = text;
+            ta.style.position = 'fixed';
+            ta.style.opacity = '0';
+            document.body.appendChild(ta);
+            ta.select();
+            try { document.execCommand('copy'); callback(); }
+            catch (e) { console.warn('复制失败', e); }
+            document.body.removeChild(ta);
         }
     </script>
 </body>
