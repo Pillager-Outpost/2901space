@@ -135,8 +135,7 @@
     }
     a:hover { border-bottom-color: var(--accent); }
 
-    /* ========== 下载下拉 ========== */
-    .download-toggle {
+    .fold-toggle {
         display: inline-flex;
         align-items: center;
         gap: 8px;
@@ -151,19 +150,19 @@
         box-shadow: 0 4px 14px rgba(14, 165, 233, 0.25);
         transition: transform 0.2s, box-shadow 0.2s;
     }
-    .download-toggle:hover {
+    .fold-toggle:hover {
         transform: translateY(-2px);
         box-shadow: 0 8px 22px rgba(14, 165, 233, 0.35);
     }
-    .download-toggle .arrow {
+    .fold-toggle .arrow {
         display: inline-block;
         transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
     }
-    .download.open .download-toggle .arrow {
+    .fold.open .fold-toggle .arrow {
         transform: rotate(180deg);
     }
 
-    .download-list {
+    .fold-list {
         max-height: 0;
         overflow: hidden;
         opacity: 0;
@@ -172,7 +171,7 @@
                     margin-top 0.5s ease;
         margin-top: 0;
     }
-    .download.open .download-list {
+    .fold.open .fold-list {
         opacity: 1;
         margin-top: 18px;
     }
@@ -201,14 +200,14 @@
     }
     html[data-theme="dark"] .download-inner a { background: rgba(255, 255, 255, 0.06); }
 
-    .download.open .download-inner a {
+    .fold.open .download-inner a {
         opacity: 1;
         transform: translateX(0);
     }
-    .download.open .download-inner a:nth-child(1) { transition-delay: 0.05s; }
-    .download.open .download-inner a:nth-child(2) { transition-delay: 0.15s; }
-    .download.open .download-inner a:nth-child(3) { transition-delay: 0.25s; }
-    .download.open .download-inner a:nth-child(4) { transition-delay: 0.35s; }
+    .fold.open .download-inner a:nth-child(1) { transition-delay: 0.05s; }
+    .fold.open .download-inner a:nth-child(2) { transition-delay: 0.15s; }
+    .fold.open .download-inner a:nth-child(3) { transition-delay: 0.25s; }
+    .fold.open .download-inner a:nth-child(4) { transition-delay: 0.35s; }
 
     .download-inner a:hover {
         background: var(--btn-bg);
@@ -216,9 +215,7 @@
         transform: translateX(0) translateY(-2px) !important;
     }
 
-    /* 哈希信息 */
     .hash-info {
-        margin-top: 16px;
         font-size: 0.85em;
         color: var(--text-muted);
         line-height: 1.6;
@@ -228,7 +225,6 @@
         align-items: center;
         gap: 8px;
         flex-wrap: wrap;
-        margin-top: 6px;
     }
     .hash-info code {
         font-family: "Consolas", "Courier New", monospace;
@@ -307,6 +303,138 @@
     #backToTop.show { display: flex; }
     #backToTop:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(14, 165, 233, 0.45); }
 
+    .modal-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(4px);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        z-index: 3000;
+        opacity: 0;
+        transition: opacity 0.3s;
+    }
+    .modal-overlay.show {
+        display: flex;
+        opacity: 1;
+    }
+
+    .modal-box {
+        background: var(--card);
+        backdrop-filter: blur(12px);
+        border: 1px solid var(--border);
+        border-radius: 18px;
+        padding: 32px 28px;
+        max-width: 420px;
+        width: 100%;
+        text-align: center;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        animation: eggPop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    @keyframes eggPop {
+        0% { transform: scale(0.8); opacity: 0; }
+        100% { transform: scale(1); opacity: 1; }
+    }
+
+    .modal-emoji {
+        font-size: 3em;
+        margin-bottom: 12px;
+        display: block;
+    }
+    .modal-title {
+        font-size: 1.4em;
+        font-weight: normal;
+        margin-bottom: 10px;
+        color: var(--accent);
+    }
+    .modal-desc {
+        font-size: 0.95em;
+        color: var(--text-muted);
+        margin-bottom: 20px;
+    }
+    .modal-code-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        justify-content: center;
+        flex-wrap: wrap;
+        margin-bottom: 24px;
+    }
+    .modal-code {
+        font-family: "Consolas", "Courier New", monospace;
+        font-size: 1em;
+        color: var(--text);
+        background: rgba(255, 255, 255, 0.5);
+        padding: 10px 16px;
+        border-radius: 10px;
+        word-break: break-all;
+        user-select: all;
+        border: 1px dashed var(--accent);
+    }
+    html[data-theme="dark"] .modal-code {
+        background: rgba(255, 255, 255, 0.08);
+    }
+    .modal-close {
+        padding: 10px 28px;
+        font-size: 1em;
+        font-family: inherit;
+        color: var(--btn-text);
+        background: var(--btn-bg);
+        border: none;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: transform 0.15s, box-shadow 0.2s;
+    }
+    .modal-close:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 18px rgba(14, 165, 233, 0.35);
+    }
+
+    .modal-box.small {
+        max-width: 320px;
+        padding: 26px 22px;
+    }
+    .modal-box.small .modal-emoji {
+        font-size: 2.4em;
+    }
+    .modal-box.small .modal-title {
+        font-size: 1.2em;
+    }
+
+    .egg-title-row {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        margin-bottom: 10px;
+    }
+    .egg-title-row .modal-title {
+        margin-bottom: 0;
+    }
+    .egg-help {
+        width: 26px;
+        height: 26px;
+        border-radius: 50%;
+        border: 1px solid var(--accent);
+        background: transparent;
+        color: var(--accent);
+        font-size: 0.85em;
+        font-family: inherit;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background 0.2s, color 0.2s;
+        flex-shrink: 0;
+    }
+    .egg-help:hover {
+        background: var(--accent);
+        color: #fff;
+    }
+
     @media (max-width: 600px) {
         body { padding: 24px 14px; }
         .card { padding: 22px 18px; }
@@ -343,9 +471,9 @@
             <h2 class="section-title">链接</h2>
             <p>2901 图库（未完成）</p>
 
-            <div class="download">
-                <button class="download-toggle" type="button">⬇ 2901 Island 下载 <span class="arrow">▾</span></button>
-                <div class="download-list">
+            <div class="fold download" style="margin-bottom:16px">
+                <button class="fold-toggle" type="button">⬇ 2901 Island 下载 <span class="arrow">▾</span></button>
+                <div class="fold-list">
                     <div class="download-inner">
                         <a href="https://pillager-outpost.github.io/2901space/2901_island_downloader_windows.exe" download>Windows</a>
                         <a href="https://pillager-outpost.github.io/2901space/android.zip" download>Android</a>
@@ -355,15 +483,20 @@
                 </div>
             </div>
 
-            <div class="hash-info">
-                <span>Windows 文件 SHA256：</span>
-                <div class="hash-row">
-                    <code id="winHash">791B3E4E25ED0888B625727D6E941C8217477B3086100A4C1C07AEECE140CC11</code>
-                    <button class="copy-hash" type="button" data-target="winHash">复制</button>
+            <div class="fold advanced">
+                <button class="fold-toggle" type="button">显示高级信息 <span class="arrow">▾</span></button>
+                <div class="fold-list">
+                    <div class="hash-info">
+                        <p style="margin-bottom:8px">Windows 文件 SHA256：</p>
+                        <div class="hash-row">
+                            <code id="winHash">791B3E4E25ED0888B625727D6E941C8217477B3086100A4C1C07AEECE140CC11</code>
+                            <button class="copy-hash" type="button" data-target="winHash">复制</button>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <p style="margin-top:20px"><a href="https://github.com/Pillager-Outpost/2901space/issues/1">反馈问题 &amp; 建议</a></p>
+            <p style="margin-top:24px"><a href="https://github.com/Pillager-Outpost/2901space/issues/1">反馈问题 &amp; 建议</a></p>
         </div>
 
         <div class="card">
@@ -371,7 +504,7 @@
                 <p>页面版本：v1</p>
                 <p>制作：刘智中（<a href="https://pillager-outpost.github.io/">个人主页</a>）</p>
                 <p>鸣谢：DeepSeek v4.1 Flash, GitHub Pages</p>
-                <p>下次可能的更新：生物错题统计页面</p>
+                <p>下次可能的更新：？？？</p>
             </div>
             <div style="margin-top:20px">
                 <button id="themeToggle" class="btn">🌙 深色模式</button>
@@ -381,6 +514,43 @@
     </div>
 
     <button id="backToTop" title="返回顶部">↑</button>
+
+    <div class="modal-overlay" id="hintModal">
+        <div class="modal-box small">
+            <span class="modal-emoji">🙃</span>
+            <h2 class="modal-title">请不要一直点我</h2>
+            <p class="modal-desc">再点几次，也许会有惊喜？</p>
+            <button class="modal-close" id="hintClose" type="button">知道了</button>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="eggOverlay">
+        <div class="modal-box">
+            <span class="modal-emoji">🎉</span>
+            <div class="egg-title-row">
+                <h2 class="modal-title">恭喜获得彩蛋 #1</h2>
+                <button class="egg-help" id="eggHelp" type="button" title="彩蛋说明">?</button>
+            </div>
+            <p class="modal-desc">这是你的专属兑换码，请在软件里兑换：</p>
+            <div class="modal-code-row">
+                <code class="modal-code" id="eggCode">crackawatheqwqcode2901</code>
+                <button class="copy-hash" type="button" data-target="eggCode">复制</button>
+            </div>
+            <button class="modal-close" id="eggClose" type="button">收下彩蛋</button>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="helpModal">
+        <div class="modal-box small">
+            <span class="modal-emoji">🥚</span>
+            <h2 class="modal-title">关于彩蛋</h2>
+            <p class="modal-desc" style="text-align:left; line-height:1.8">
+                彩蛋是开发者的小心思，集齐 9 个会？？？<br>
+                <strong>提示：下一个彩蛋在软件里。</strong>
+            </p>
+            <button class="modal-close" id="helpClose" type="button">知道了</button>
+        </div>
+    </div>
 
     <script>
         function safeGet(k){ try { return localStorage.getItem(k); } catch(e){ return null; } }
@@ -413,25 +583,23 @@
             safeSet('theme', next);
         });
 
-        // ========== 下载下拉 ==========
-        var downloadBox = document.querySelector('.download');
-        var downloadToggle = document.querySelector('.download-toggle');
-        var downloadList = document.querySelector('.download-list');
-        if (downloadToggle && downloadList) {
-            downloadToggle.addEventListener('click', function () {
-                var isOpen = downloadBox.classList.toggle('open');
+        document.querySelectorAll('.fold').forEach(function (box) {
+            var toggle = box.querySelector('.fold-toggle');
+            var list = box.querySelector('.fold-list');
+            if (!toggle || !list) return;
+            toggle.addEventListener('click', function () {
+                var isOpen = box.classList.toggle('open');
                 if (isOpen) {
-                    downloadList.style.maxHeight = downloadList.scrollHeight + 'px';
+                    list.style.maxHeight = list.scrollHeight + 'px';
                 } else {
-                    downloadList.style.maxHeight = downloadList.scrollHeight + 'px';
+                    list.style.maxHeight = list.scrollHeight + 'px';
                     requestAnimationFrame(function () {
-                        downloadList.style.maxHeight = '0px';
+                        list.style.maxHeight = '0px';
                     });
                 }
             });
-        }
+        });
 
-        // ========== 复制哈希 ==========
         document.querySelectorAll('.copy-hash').forEach(function (btn) {
             btn.addEventListener('click', function () {
                 var targetId = btn.getAttribute('data-target');
@@ -440,10 +608,11 @@
                 var text = target.textContent.trim();
 
                 function done() {
+                    var original = btn.textContent;
                     btn.textContent = '已复制 ✓';
                     btn.classList.add('copied');
                     setTimeout(function () {
-                        btn.textContent = '复制';
+                        btn.textContent = original;
                         btn.classList.remove('copied');
                     }, 1500);
                 }
@@ -469,6 +638,84 @@
             catch (e) { console.warn('复制失败', e); }
             document.body.removeChild(ta);
         }
+
+        var hintModal = document.getElementById('hintModal');
+        var hintClose = document.getElementById('hintClose');
+        var eggOverlay = document.getElementById('eggOverlay');
+        var eggClose = document.getElementById('eggClose');
+        var themeBtn = document.getElementById('themeToggle');
+
+        var clickCount = 0;
+        var clickTimer = null;
+        var hintShown = false;
+        var eggShown = false;
+
+        var HINT_THRESHOLD = 5;
+        var EGG_THRESHOLD = 5;
+        var RESET_TIME = 2000;
+
+        themeBtn.addEventListener('click', function () {
+            if (eggShown) return;
+
+            clickCount++;
+            clearTimeout(clickTimer);
+            clickTimer = setTimeout(function () {
+                clickCount = 0;
+                hintShown = false;
+            }, RESET_TIME);
+
+            if (!hintShown && clickCount >= HINT_THRESHOLD) {
+                hintShown = true;
+                clickCount = 0;
+                hintModal.classList.add('show');
+            } else if (hintShown && clickCount >= EGG_THRESHOLD) {
+                eggShown = true;
+                clearTimeout(clickTimer);
+                hintModal.classList.remove('show');
+                setTimeout(function () {
+                    eggOverlay.classList.add('show');
+                }, 250);
+            }
+        });
+
+        if (hintClose) {
+            hintClose.addEventListener('click', function () {
+                hintModal.classList.remove('show');
+            });
+        }
+
+        if (eggClose) {
+            eggClose.addEventListener('click', function () {
+                eggOverlay.classList.remove('show');
+            });
+        }
+
+        var eggHelp = document.getElementById('eggHelp');
+        var helpModal = document.getElementById('helpModal');
+        var helpClose = document.getElementById('helpClose');
+
+        if (eggHelp) {
+            eggHelp.addEventListener('click', function () {
+                helpModal.classList.add('show');
+            });
+        }
+        if (helpClose) {
+            helpClose.addEventListener('click', function () {
+                helpModal.classList.remove('show');
+            });
+        }
+
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') {
+                if (helpModal.classList.contains('show')) {
+                    helpModal.classList.remove('show');
+                } else if (eggOverlay.classList.contains('show')) {
+                    eggOverlay.classList.remove('show');
+                } else if (hintModal.classList.contains('show')) {
+                    hintModal.classList.remove('show');
+                }
+            }
+        });
     </script>
 </body>
 </html>
