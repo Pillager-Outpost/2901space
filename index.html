@@ -123,6 +123,7 @@
         border-left: 4px solid var(--notice-border);
         padding: 16px 22px;
         border-radius: 0 10px 10px 0;
+        margin-bottom: 20px;
     }
     .notice p { font-size: 1em; margin-bottom: 8px; }
     .notice p:last-child { margin-bottom: 0; }
@@ -134,6 +135,28 @@
         transition: border-color 0.2s, color 0.2s;
     }
     a:hover { border-bottom-color: var(--accent); }
+
+    .feature-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 11px 22px;
+        font-size: 1em;
+        font-family: inherit;
+        color: var(--btn-text);
+        background: var(--btn-bg);
+        border: none;
+        border-radius: 10px;
+        cursor: pointer;
+        text-decoration: none;
+        box-shadow: 0 4px 14px rgba(14, 165, 233, 0.25);
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .feature-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 22px rgba(14, 165, 233, 0.35);
+        border-bottom: none;
+    }
 
     .fold-toggle {
         display: inline-flex;
@@ -158,7 +181,7 @@
         display: inline-block;
         transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
     }
-    .fold.open .fold-toggle .arrow {
+    .fold.open > .fold-toggle .arrow {
         transform: rotate(180deg);
     }
 
@@ -171,9 +194,58 @@
                     margin-top 0.5s ease;
         margin-top: 0;
     }
-    .fold.open .fold-list {
+    .fold.open > .fold-list {
         opacity: 1;
         margin-top: 18px;
+    }
+
+    .sub-fold {
+        margin-top: 16px;
+        padding-left: 4px;
+    }
+    .sub-fold .fold-toggle {
+        font-size: 0.92em;
+        padding: 9px 18px;
+        background: rgba(255, 255, 255, 0.5);
+        color: var(--text);
+        border: 1px solid var(--border);
+        box-shadow: none;
+    }
+    html[data-theme="dark"] .sub-fold .fold-toggle {
+        background: rgba(255, 255, 255, 0.06);
+    }
+    .sub-fold .fold-toggle:hover {
+        background: var(--accent);
+        color: #fff;
+        border-color: var(--accent);
+        box-shadow: 0 4px 14px rgba(14, 165, 233, 0.25);
+    }
+
+    .sub-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        margin-top: 16px;
+        margin-left: 4px;
+        padding: 9px 18px;
+        font-size: 0.92em;
+        font-family: inherit;
+        color: var(--text);
+        background: rgba(255, 255, 255, 0.5);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        text-decoration: none;
+        transition: background 0.2s, color 0.2s, border-color 0.2s, transform 0.2s;
+    }
+    html[data-theme="dark"] .sub-link {
+        background: rgba(255, 255, 255, 0.06);
+    }
+    .sub-link:hover {
+        background: var(--accent);
+        color: #fff;
+        border-color: var(--accent);
+        transform: translateY(-2px);
+        border-bottom: 1px solid var(--accent);
     }
 
     .download-inner {
@@ -200,14 +272,14 @@
     }
     html[data-theme="dark"] .download-inner a { background: rgba(255, 255, 255, 0.06); }
 
-    .fold.open .download-inner a {
+    .fold.open > .fold-list > .download-inner a {
         opacity: 1;
         transform: translateX(0);
     }
-    .fold.open .download-inner a:nth-child(1) { transition-delay: 0.05s; }
-    .fold.open .download-inner a:nth-child(2) { transition-delay: 0.15s; }
-    .fold.open .download-inner a:nth-child(3) { transition-delay: 0.25s; }
-    .fold.open .download-inner a:nth-child(4) { transition-delay: 0.35s; }
+    .fold.open > .fold-list > .download-inner a:nth-child(1) { transition-delay: 0.05s; }
+    .fold.open > .fold-list > .download-inner a:nth-child(2) { transition-delay: 0.15s; }
+    .fold.open > .fold-list > .download-inner a:nth-child(3) { transition-delay: 0.25s; }
+    .fold.open > .fold-list > .download-inner a:nth-child(4) { transition-delay: 0.35s; }
 
     .download-inner a:hover {
         background: var(--btn-bg);
@@ -445,6 +517,7 @@
         .download-inner { flex-direction: column; }
         .download-inner a { width: 100%; text-align: center; }
         .hash-info { font-size: 0.8em; }
+        .sub-link { width: 100%; justify-content: center; }
         #backToTop { right: 16px; bottom: 16px; width: 44px; height: 44px; }
     }
 </style>
@@ -465,34 +538,39 @@
                 <p>本界面仍在完善，有很多未完成的功能，请谅解。反馈意见，请移步下方。</p>
                 <p>注：反馈意见涉及遥远的服务器，可能无法访问。</p>
             </div>
+            <a class="feature-btn" href="https://pillager-outpost.github.io/2901space/introduction.html">📖 介绍与下载</a>
         </div>
 
         <div class="card">
             <h2 class="section-title">链接</h2>
             <p>2901 图库（未完成）</p>
 
-            <div class="fold download" style="margin-bottom:16px">
+            <div class="fold download">
                 <button class="fold-toggle" type="button">⬇ 2901 Island 下载 <span class="arrow">▾</span></button>
                 <div class="fold-list">
+
                     <div class="download-inner">
                         <a href="https://pillager-outpost.github.io/2901space/2901_island_downloader_windows.exe" download>Windows</a>
                         <a href="https://pillager-outpost.github.io/2901space/android.zip" download>Android</a>
                         <a href="https://pillager-outpost.github.io/2901space/macos.zip" download>macOS</a>
                         <a href="https://pillager-outpost.github.io/2901space/ubuntu.zip" download>Ubuntu</a>
                     </div>
-                </div>
-            </div>
 
-            <div class="fold advanced">
-                <button class="fold-toggle" type="button">显示高级信息 <span class="arrow">▾</span></button>
-                <div class="fold-list">
-                    <div class="hash-info">
-                        <p style="margin-bottom:8px">Windows 文件 SHA256：</p>
-                        <div class="hash-row">
-                            <code id="winHash">791B3E4E25ED0888B625727D6E941C8217477B3086100A4C1C07AEECE140CC11</code>
-                            <button class="copy-hash" type="button" data-target="winHash">复制</button>
+                    <div class="fold sub-fold advanced">
+                        <button class="fold-toggle" type="button">显示高级信息 <span class="arrow">▾</span></button>
+                        <div class="fold-list">
+                            <div class="hash-info">
+                                <p style="margin-bottom:8px">Windows 文件 SHA256：</p>
+                                <div class="hash-row">
+                                    <code id="winHash">791B3E4E25ED0888B625727D6E941C8217477B3086100A4C1C07AEECE140CC11</code>
+                                    <button class="copy-hash" type="button" data-target="winHash">复制</button>
+                                </div>
+                            </div>
                         </div>
                     </div>
+
+                    <a class="sub-link" href="https://pillager-outpost.github.io/2901space/introduction.html#island">📖 功能介绍</a>
+
                 </div>
             </div>
 
@@ -584,21 +662,51 @@
         });
 
         document.querySelectorAll('.fold').forEach(function (box) {
-            var toggle = box.querySelector('.fold-toggle');
-            var list = box.querySelector('.fold-list');
+            var toggle = box.querySelector(':scope > .fold-toggle');
+            var list = box.querySelector(':scope > .fold-list');
             if (!toggle || !list) return;
-            toggle.addEventListener('click', function () {
+
+            var timer = null;
+
+            toggle.addEventListener('click', function (e) {
+                e.stopPropagation();
                 var isOpen = box.classList.toggle('open');
+                clearTimeout(timer);
+
                 if (isOpen) {
+                    list.style.overflow = 'hidden';
                     list.style.maxHeight = list.scrollHeight + 'px';
+                    timer = setTimeout(function () {
+                        if (box.classList.contains('open')) {
+                            list.style.maxHeight = 'none';
+                            list.style.overflow = 'visible';
+                        }
+                    }, 520);
+                    updateParentHeight(box);
                 } else {
+                    list.style.overflow = 'hidden';
                     list.style.maxHeight = list.scrollHeight + 'px';
                     requestAnimationFrame(function () {
                         list.style.maxHeight = '0px';
                     });
+                    updateParentHeight(box);
                 }
             });
         });
+
+        function updateParentHeight(el) {
+            var parent = el.parentElement;
+            while (parent) {
+                if (parent.classList && parent.classList.contains('fold') && parent.classList.contains('open')) {
+                    var parentList = parent.querySelector(':scope > .fold-list');
+                    if (parentList) {
+                        parentList.style.overflow = 'hidden';
+                        parentList.style.maxHeight = parentList.scrollHeight + 'px';
+                    }
+                }
+                parent = parent.parentElement;
+            }
+        }
 
         document.querySelectorAll('.copy-hash').forEach(function (btn) {
             btn.addEventListener('click', function () {
