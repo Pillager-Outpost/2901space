@@ -3,29 +3,46 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>页面不存在 · 2901 Space</title>
+<title>404 · 2901 Space</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏝️</text></svg>">
 <style>
     :root {
-        --bg: #E5FBFF;
-        --text: #222;
-        --text-muted: #666;
-        --border: #333;
-        --highlight-bg: #D9D9D9;
-        --highlight-text: #EE0000;
+        --bg1: #E0F2FE;
+        --bg2: #F0FDF4;
+        --card: rgba(255, 255, 255, 0.85);
+        --text: #1E293B;
+        --text-muted: #64748B;
+        --border: rgba(203, 213, 225, 0.6);
+        --accent: #0EA5E9;
+        --shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+        --btn-bg: #0EA5E9;
+        --btn-text: #fff;
+        --ground-line: rgba(100, 116, 139, 0.45);
+        --grass: rgba(132, 204, 22, 0.65);
+        --grass-dark: rgba(101, 163, 13, 0.75);
     }
     html[data-theme="dark"] {
-        --bg: #12161A;
-        --text: #E6E6E6;
-        --text-muted: #9AA0A6;
-        --border: #E6E6E6;
-        --highlight-bg: #3A3A3A;
-        --highlight-text: #FF6B6B;
+        --bg1: #0B1120;
+        --bg2: #111827;
+        --card: rgba(30, 41, 59, 0.85);
+        --text: #E2E8F0;
+        --text-muted: #94A3B8;
+        --border: rgba(51, 65, 85, 0.8);
+        --accent: #38BDF8;
+        --shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+        --btn-bg: #38BDF8;
+        --btn-text: #0B1120;
+        --ground-line: rgba(148, 163, 184, 0.5);
+        --grass: rgba(74, 222, 128, 0.55);
+        --grass-dark: rgba(34, 197, 94, 0.65);
     }
 
     * { margin: 0; padding: 0; box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
 
     body {
-        background: var(--bg);
+        background: linear-gradient(160deg, var(--bg1), var(--bg2));
+        background-attachment: fixed;
         color: var(--text);
         font-family: "华文中宋", "STZhongsong", "SimSun", serif;
         line-height: 1.8;
@@ -34,30 +51,137 @@
         align-items: center;
         justify-content: center;
         padding: 24px;
-        text-align: center;
-        transition: background 0.3s, color 0.3s;
+        transition: background 0.4s, color 0.3s;
     }
 
-    .box { max-width: 520px; }
+    .container {
+        max-width: 520px;
+        width: 100%;
+        text-align: center;
+    }
 
+    /* ========== 场景 ========== */
+    .scene {
+        position: relative;
+        height: 170px;
+        margin-bottom: 24px;
+        overflow: hidden;
+    }
+
+    /* 木桩 */
+    .stump {
+        position: absolute;
+        left: 50%;
+        bottom: 32px;
+        transform: translateX(-50%);
+        width: 84px;
+        height: 84px;
+        animation: roll 2.4s linear infinite;
+        z-index: 3;
+    }
+    .stump svg {
+        width: 100%;
+        height: 100%;
+        display: block;
+        filter: drop-shadow(0 3px 4px rgba(0, 0, 0, 0.08));
+    }
+    @keyframes roll {
+        from { transform: translateX(-50%) rotate(0deg); }
+        to   { transform: translateX(-50%) rotate(360deg); }
+    }
+
+    /* ========== 地面：一条起伏线，向左移动 ========== */
+    .ground {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 28px;
+        height: 12px;
+        z-index: 1;
+        overflow: hidden;
+    }
+
+    .ground-line {
+        position: absolute;
+        left: 0;
+        bottom: 0;
+        width: 200%;
+        height: 100%;
+        animation: groundMove 3s linear infinite;
+    }
+
+    /* 用 SVG 画一条起伏的线，重复平铺 */
+    .ground-line svg {
+        display: block;
+        width: 50%;
+        height: 100%;
+        float: left;
+    }
+
+    @keyframes groundMove {
+        from { transform: translateX(0); }
+        to   { transform: translateX(-50%); }
+    }
+
+    /* 草丛层 */
+    .grass-layer {
+        position: absolute;
+        left: 0;
+        bottom: 30px;
+        width: 300%;
+        height: 40px;
+        z-index: 2;
+        pointer-events: none;
+        animation: grassMove 6s linear infinite;
+    }
+
+    @keyframes grassMove {
+        from { transform: translateX(0); }
+        to   { transform: translateX(-180px); }
+    }
+
+    .tuft {
+        position: absolute;
+        bottom: 0;
+        width: 26px;
+        height: 28px;
+    }
+    .tuft svg {
+        width: 100%;
+        height: 100%;
+        display: block;
+    }
+
+    .tuft:nth-child(1)  { left: 10px;  transform: scale(0.9); }
+    .tuft:nth-child(2)  { left: 70px;  transform: scale(1.1); }
+    .tuft:nth-child(3)  { left: 130px; transform: scale(0.8); }
+    .tuft:nth-child(4)  { left: 190px; transform: scale(1); }
+    .tuft:nth-child(5)  { left: 250px; transform: scale(1.15); }
+    .tuft:nth-child(6)  { left: 310px; transform: scale(0.9); }
+    .tuft:nth-child(7)  { left: 370px; transform: scale(1.05); }
+    .tuft:nth-child(8)  { left: 430px; transform: scale(0.85); }
+    .tuft:nth-child(9)  { left: 490px; transform: scale(1); }
+    .tuft:nth-child(10) { left: 550px; transform: scale(1.1); }
+    .tuft:nth-child(11) { left: 610px; transform: scale(0.9); }
+    .tuft:nth-child(12) { left: 670px; transform: scale(1.05); }
+    .tuft:nth-child(13) { left: 730px; transform: scale(0.8); }
+    .tuft:nth-child(14) { left: 790px; transform: scale(1); }
+    .tuft:nth-child(15) { left: 850px; transform: scale(1.1); }
+
+    /* ========== 文字 ========== */
     .code {
-        font-size: 5em;
+        font-size: 4.5em;
         font-weight: normal;
         line-height: 1;
-        margin-bottom: 16px;
-        color: var(--highlight-text);
-        background: var(--highlight-bg);
-        display: inline-block;
-        padding: 10px 28px;
-        border-radius: 12px;
+        color: var(--accent);
+        margin-bottom: 8px;
+        letter-spacing: 0.05em;
     }
-
     .title {
         font-size: 1.6em;
         font-weight: normal;
         margin-bottom: 12px;
     }
-
     .desc {
         font-size: 1em;
         color: var(--text-muted);
@@ -66,49 +190,122 @@
 
     .back {
         display: inline-block;
-        padding: 12px 28px;
+        padding: 12px 32px;
         font-size: 1em;
-        color: var(--text);
-        background: var(--bg);
-        border: 1px solid var(--border);
+        font-family: inherit;
+        color: var(--btn-text);
+        background: var(--btn-bg);
+        border: none;
         border-radius: 10px;
         text-decoration: none;
-        transition: background 0.2s, color 0.2s;
+        box-shadow: 0 4px 14px rgba(14, 165, 233, 0.25);
+        transition: transform 0.2s, box-shadow 0.2s;
     }
     .back:hover {
-        background: var(--highlight-bg);
-        color: var(--highlight-text);
+        transform: translateY(-2px);
+        box-shadow: 0 8px 22px rgba(14, 165, 233, 0.35);
     }
 
     #themeToggle {
         position: fixed;
-        top: 20px; right: 20px;
-        width: 44px; height: 44px;
+        top: 20px;
+        right: 20px;
+        width: 44px;
+        height: 44px;
         border-radius: 50%;
         border: 1px solid var(--border);
-        background: var(--bg);
+        background: var(--card);
         color: var(--text);
         font-size: 1.2em;
         cursor: pointer;
         display: flex;
         align-items: center;
         justify-content: center;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        box-shadow: var(--shadow);
+        backdrop-filter: blur(8px);
         transition: background 0.2s, transform 0.2s;
         z-index: 999;
     }
-    #themeToggle:hover { background: var(--highlight-bg); transform: scale(1.08); }
+    #themeToggle:hover {
+        transform: scale(1.08);
+    }
+
+    @media (max-width: 600px) {
+        .scene { height: 140px; }
+        .stump { width: 66px; height: 66px; bottom: 28px; }
+        .ground { bottom: 24px; }
+        .grass-layer { bottom: 24px; height: 34px; }
+        .code { font-size: 3.4em; }
+        .title { font-size: 1.3em; }
+        .desc { font-size: 0.95em; }
+        #themeToggle { top: 14px; right: 14px; width: 38px; height: 38px; font-size: 1em; }
+    }
 </style>
 </head>
 <body>
 
     <button id="themeToggle" title="切换深色/浅色模式">🌙</button>
 
-    <div class="box">
+    <div class="container">
+
+        <div class="scene">
+            <!-- 起伏地面 -->
+            <div class="ground">
+                <div class="ground-line">
+                    <svg viewBox="0 0 300 12" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M0 6 Q 25 3, 50 6 T 100 6 T 150 6 T 200 6 T 250 6 T 300 6"
+                              fill="none" stroke="var(--ground-line)" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                    <svg viewBox="0 0 300 12" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M0 6 Q 25 3, 50 6 T 100 6 T 150 6 T 200 6 T 250 6 T 300 6"
+                              fill="none" stroke="var(--ground-line)" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                </div>
+            </div>
+
+            <!-- 草丛层 -->
+            <div class="grass-layer">
+                <div class="tuft"><svg viewBox="0 0 30 30" xmlns="http://www.w3.org/2000/svg"><path d="M15 30 Q 12 18 6 10 Q 10 16 13 24 Z" fill="var(--grass)"/><path d="M15 30 Q 13 16 10 6 Q 14 14 16 24 Z" fill="var(--grass-dark)"/><path d="M15 30 Q 16 16 20 8 Q 18 16 17 24 Z" fill="var(--grass)"/><path d="M15 30 Q 18 18 24 12 Q 20 18 17 24 Z" fill="var(--grass-dark)"/></svg></div>
+                <div class="tuft"><svg viewBox="0 0 30 30" xmlns="http://www.w3.org/2000/svg"><path d="M15 30 Q 12 18 6 10 Q 10 16 13 24 Z" fill="var(--grass)"/><path d="M15 30 Q 13 16 10 6 Q 14 14 16 24 Z" fill="var(--grass-dark)"/><path d="M15 30 Q 16 16 20 8 Q 18 16 17 24 Z" fill="var(--grass)"/><path d="M15 30 Q 18 18 24 12 Q 20 18 17 24 Z" fill="var(--grass-dark)"/></svg></div>
+                <div class="tuft"><svg viewBox="0 0 30 30" xmlns="http://www.w3.org/2000/svg"><path d="M15 30 Q 12 18 6 10 Q 10 16 13 24 Z" fill="var(--grass)"/><path d="M15 30 Q 13 16 10 6 Q 14 14 16 24 Z" fill="var(--grass-dark)"/><path d="M15 30 Q 16 16 20 8 Q 18 16 17 24 Z" fill="var(--grass)"/><path d="M15 30 Q 18 18 24 12 Q 20 18 17 24 Z" fill="var(--grass-dark)"/></svg></div>
+                <div class="tuft"><svg viewBox="0 0 30 30" xmlns="http://www.w3.org/2000/svg"><path d="M15 30 Q 12 18 6 10 Q 10 16 13 24 Z" fill="var(--grass)"/><path d="M15 30 Q 13 16 10 6 Q 14 14 16 24 Z" fill="var(--grass-dark)"/><path d="M15 30 Q 16 16 20 8 Q 18 16 17 24 Z" fill="var(--grass)"/><path d="M15 30 Q 18 18 24 12 Q 20 18 17 24 Z" fill="var(--grass-dark)"/></svg></div>
+                <div class="tuft"><svg viewBox="0 0 30 30" xmlns="http://www.w3.org/2000/svg"><path d="M15 30 Q 12 18 6 10 Q 10 16 13 24 Z" fill="var(--grass)"/><path d="M15 30 Q 13 16 10 6 Q 14 14 16 24 Z" fill="var(--grass-dark)"/><path d="M15 30 Q 16 16 20 8 Q 18 16 17 24 Z" fill="var(--grass)"/><path d="M15 30 Q 18 18 24 12 Q 20 18 17 24 Z" fill="var(--grass-dark)"/></svg></div>
+                <div class="tuft"><svg viewBox="0 0 30 30" xmlns="http://www.w3.org/2000/svg"><path d="M15 30 Q 12 18 6 10 Q 10 16 13 24 Z" fill="var(--grass)"/><path d="M15 30 Q 13 16 10 6 Q 14 14 16 24 Z" fill="var(--grass-dark)"/><path d="M15 30 Q 16 16 20 8 Q 18 16 17 24 Z" fill="var(--grass)"/><path d="M15 30 Q 18 18 24 12 Q 20 18 17 24 Z" fill="var(--grass-dark)"/></svg></div>
+                <div class="tuft"><svg viewBox="0 0 30 30" xmlns="http://www.w3.org/2000/svg"><path d="M15 30 Q 12 18 6 10 Q 10 16 13 24 Z" fill="var(--grass)"/><path d="M15 30 Q 13 16 10 6 Q 14 14 16 24 Z" fill="var(--grass-dark)"/><path d="M15 30 Q 16 16 20 8 Q 18 16 17 24 Z" fill="var(--grass)"/><path d="M15 30 Q 18 18 24 12 Q 20 18 17 24 Z" fill="var(--grass-dark)"/></svg></div>
+                <div class="tuft"><svg viewBox="0 0 30 30" xmlns="http://www.w3.org/2000/svg"><path d="M15 30 Q 12 18 6 10 Q 10 16 13 24 Z" fill="var(--grass)"/><path d="M15 30 Q 13 16 10 6 Q 14 14 16 24 Z" fill="var(--grass-dark)"/><path d="M15 30 Q 16 16 20 8 Q 18 16 17 24 Z" fill="var(--grass)"/><path d="M15 30 Q 18 18 24 12 Q 20 18 17 24 Z" fill="var(--grass-dark)"/></svg></div>
+                <div class="tuft"><svg viewBox="0 0 30 30" xmlns="http://www.w3.org/2000/svg"><path d="M15 30 Q 12 18 6 10 Q 10 16 13 24 Z" fill="var(--grass)"/><path d="M15 30 Q 13 16 10 6 Q 14 14 16 24 Z" fill="var(--grass-dark)"/><path d="M15 30 Q 16 16 20 8 Q 18 16 17 24 Z" fill="var(--grass)"/><path d="M15 30 Q 18 18 24 12 Q 20 18 17 24 Z" fill="var(--grass-dark)"/></svg></div>
+                <div class="tuft"><svg viewBox="0 0 30 30" xmlns="http://www.w3.org/2000/svg"><path d="M15 30 Q 12 18 6 10 Q 10 16 13 24 Z" fill="var(--grass)"/><path d="M15 30 Q 13 16 10 6 Q 14 14 16 24 Z" fill="var(--grass-dark)"/><path d="M15 30 Q 16 16 20 8 Q 18 16 17 24 Z" fill="var(--grass)"/><path d="M15 30 Q 18 18 24 12 Q 20 18 17 24 Z" fill="var(--grass-dark)"/></svg></div>
+                <div class="tuft"><svg viewBox="0 0 30 30" xmlns="http://www.w3.org/2000/svg"><path d="M15 30 Q 12 18 6 10 Q 10 16 13 24 Z" fill="var(--grass)"/><path d="M15 30 Q 13 16 10 6 Q 14 14 16 24 Z" fill="var(--grass-dark)"/><path d="M15 30 Q 16 16 20 8 Q 18 16 17 24 Z" fill="var(--grass)"/><path d="M15 30 Q 18 18 24 12 Q 20 18 17 24 Z" fill="var(--grass-dark)"/></svg></div>
+                <div class="tuft"><svg viewBox="0 0 30 30" xmlns="http://www.w3.org/2000/svg"><path d="M15 30 Q 12 18 6 10 Q 10 16 13 24 Z" fill="var(--grass)"/><path d="M15 30 Q 13 16 10 6 Q 14 14 16 24 Z" fill="var(--grass-dark)"/><path d="M15 30 Q 16 16 20 8 Q 18 16 17 24 Z" fill="var(--grass)"/><path d="M15 30 Q 18 18 24 12 Q 20 18 17 24 Z" fill="var(--grass-dark)"/></svg></div>
+                <div class="tuft"><svg viewBox="0 0 30 30" xmlns="http://www.w3.org/2000/svg"><path d="M15 30 Q 12 18 6 10 Q 10 16 13 24 Z" fill="var(--grass)"/><path d="M15 30 Q 13 16 10 6 Q 14 14 16 24 Z" fill="var(--grass-dark)"/><path d="M15 30 Q 16 16 20 8 Q 18 16 17 24 Z" fill="var(--grass)"/><path d="M15 30 Q 18 18 24 12 Q 20 18 17 24 Z" fill="var(--grass-dark)"/></svg></div>
+                <div class="tuft"><svg viewBox="0 0 30 30" xmlns="http://www.w3.org/2000/svg"><path d="M15 30 Q 12 18 6 10 Q 10 16 13 24 Z" fill="var(--grass)"/><path d="M15 30 Q 13 16 10 6 Q 14 14 16 24 Z" fill="var(--grass-dark)"/><path d="M15 30 Q 16 16 20 8 Q 18 16 17 24 Z" fill="var(--grass)"/><path d="M15 30 Q 18 18 24 12 Q 20 18 17 24 Z" fill="var(--grass-dark)"/></svg></div>
+                <div class="tuft"><svg viewBox="0 0 30 30" xmlns="http://www.w3.org/2000/svg"><path d="M15 30 Q 12 18 6 10 Q 10 16 13 24 Z" fill="var(--grass)"/><path d="M15 30 Q 13 16 10 6 Q 14 14 16 24 Z" fill="var(--grass-dark)"/><path d="M15 30 Q 16 16 20 8 Q 18 16 17 24 Z" fill="var(--grass)"/><path d="M15 30 Q 18 18 24 12 Q 20 18 17 24 Z" fill="var(--grass-dark)"/></svg></div>
+            </div>
+
+            <!-- 木桩 -->
+            <div class="stump">
+                <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="50" cy="50" r="46" fill="#D4A373"/>
+                    <circle cx="50" cy="50" r="40" fill="#E9C9A3"/>
+                    <circle cx="50" cy="50" r="33" fill="none" stroke="#C49A6C" stroke-width="2"/>
+                    <circle cx="50" cy="50" r="26" fill="none" stroke="#C49A6C" stroke-width="2"/>
+                    <circle cx="50" cy="50" r="19" fill="none" stroke="#C49A6C" stroke-width="2"/>
+                    <circle cx="50" cy="50" r="12" fill="none" stroke="#C49A6C" stroke-width="2"/>
+                    <circle cx="50" cy="50" r="5" fill="#B8875A"/>
+                    <path d="M 50 4 Q 54 14 50 24" stroke="#B8875A" stroke-width="2" fill="none" stroke-linecap="round"/>
+                    <path d="M 96 50 Q 86 54 76 50" stroke="#B8875A" stroke-width="2" fill="none" stroke-linecap="round"/>
+                    <path d="M 50 96 Q 46 86 50 76" stroke="#B8875A" stroke-width="2" fill="none" stroke-linecap="round"/>
+                    <path d="M 4 50 Q 14 46 24 50" stroke="#B8875A" stroke-width="2" fill="none" stroke-linecap="round"/>
+                </svg>
+            </div>
+        </div>
+
         <div class="code">404</div>
         <h1 class="title">页面不存在</h1>
-        <p class="desc">你访问的页面可能已被移除、改名，或者从未存在过。</p>
+        <p class="desc">你访问的页面可能已被移除、改名，<br>或者从未存在过。</p>
+
         <a class="back" href="https://pillager-outpost.github.io/2901space/">← 返回首页</a>
+
     </div>
 
     <script>
@@ -118,21 +315,24 @@
         var themeToggle = document.getElementById('themeToggle');
         var root = document.documentElement;
 
-        function applyTheme(t){
+        function applyTheme(t) {
             root.setAttribute('data-theme', t);
-            if (themeToggle) themeToggle.textContent = t === 'dark' ? '☀️' : '🌙';
+            if (themeToggle) {
+                themeToggle.textContent = t === 'dark' ? '☀️' : '🌙';
+            }
         }
-        function getInitialTheme(){
+        function getInitialTheme() {
             var s = safeGet('theme');
             if (s === 'dark' || s === 'light') return s;
-            try { return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'; }
+            try { return matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'; }
             catch(e){ return 'light'; }
         }
+
         applyTheme(getInitialTheme());
-        if (themeToggle){
-            themeToggle.addEventListener('click', function(){
-                var cur = root.getAttribute('data-theme');
-                var next = cur === 'dark' ? 'light' : 'dark';
+
+        if (themeToggle) {
+            themeToggle.addEventListener('click', function () {
+                var next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
                 applyTheme(next);
                 safeSet('theme', next);
             });
