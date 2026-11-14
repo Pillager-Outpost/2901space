@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>匿名建议 · 2901 Space</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='50' fill='%23E54B38'/%3E%3Ctext x='50' y='70' font-size='56' text-anchor='middle'%3E🏝️%3C/text%3E%3C/svg%3E">
+<style>
+    :root {
+        --bg1: #E0F2FE;
+        --bg2: #F0FDF4;
+        --card: rgba(255, 255, 255, 0.85);
+        --text: #1E293B;
+        --text-muted: #64748B;
+        --border: rgba(203, 213, 225, 0.6);
+        --accent: #0EA5E9;
+        --highlight-bg: #BAE6FD;
+        --highlight-text: #0369A1;
+        --shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+        --shadow-hover: 0 12px 32px rgba(14, 165, 233, 0.15);
+        --notice-bg: rgba(254, 249, 195, 0.7);
+        --notice-border: #EAB308;
+        --btn-bg: #0EA5E9;
+        --btn-text: #fff;
+        --ppt-orange: #E54B38;
+        --tab-bg: rgba(255, 255, 255, 0.5);
+        --tab-active-bg: #0EA5E9;
+        --tab-active-text: #fff;
+        --island-gradient: linear-gradient(135deg, #0EA5E9 0%, #6366F1 100%);
+        --island-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
+    }
+    html[data-theme="dark"] {
+        --bg1: #0B1120;
+        --bg2: #111827;
+        --card: rgba(30, 41, 59, 0.85);
+        --text: #E2E8F0;
+        --text-muted: #94A3B8;
+        --border: rgba(51, 65, 85, 0.8);
+        --accent: #38BDF8;
+        --highlight-bg: #0C4A6E;
+        --highlight-text: #7DD3FC;
+        --shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+        --shadow-hover: 0 12px 32px rgba(56, 189, 248, 0.2);
+        --notice-bg: rgba(42, 36, 16, 0.7);
+        --notice-border: #EAB308;
+        --btn-bg: #38BDF8;
+        --btn-text: #0B1120;
+        --ppt-orange: #F0523D;
+        --tab-bg: rgba(255, 255, 255, 0.06);
+        --tab-active-bg: #38BDF8;
+        --tab-active-text: #0B1120;
+        --island-gradient: linear-gradient(135deg, #38BDF8 0%, #818CF8 100%);
+        --island-shadow: 0 6px 20px rgba(129, 140, 248, 0.35);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+
+    body {
+        background: linear-gradient(160deg, var(--bg1), var(--bg2));
+        background-attachment: fixed;
+        color: var(--text);
+        font-family: "华文中宋", "STZhongsong", "SimSun", serif;
+        line-height: 1.8;
+        padding: 48px 20px;
+        min-height: 100vh;
+        transition: background 0.4s, color 0.3s;
+    }
+
+    .container { max-width: 820px; margin: 0 auto; }
+
+    .back-home {
+        position: fixed;
+        top: 20px;
+        left: 20px;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 10px 18px;
+        font-size: 0.95em;
+        font-family: inherit;
+        color: var(--text);
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        text-decoration: none;
+        box-shadow: var(--shadow);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        transition: background 0.2s, transform 0.15s, color 0.2s, border-color 0.2s;
+        z-index: 1000;
+    }
+    .back-home:hover {
+        background: var(--btn-bg);
+        color: var(--btn-text);
+        border-color: var(--btn-bg);
+        transform: translateY(-2px);
+        border-bottom-color: var(--btn-bg);
+    }
+    .back-home .arrow-back { font-size: 1.1em; line-height: 1; }
+
+    @keyframes fadeUp {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .card {
+        background: var(--card);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid var(--border);
+        border-radius: 18px;
+        padding: 28px 32px;
+        margin-bottom: 24px;
+        box-shadow: var(--shadow);
+        transition: box-shadow 0.3s, transform 0.3s, background 0.3s, border-color 0.3s;
+        animation: fadeUp 0.6s ease both;
+    }
+    .card:hover {
+        box-shadow: var(--shadow-hover);
+        transform: translateY(-3px);
+    }
+
+    .page-header {
+        text-align: center;
+        margin-bottom: 8px;
+    }
+    .page-header h1 {
+        font-size: 2.2em;
+        font-weight: normal;
+        line-height: 1.3;
+        margin-bottom: 4px;
+    }
+    .page-header .sub {
+        font-size: 1.1em;
+        color: var(--text-muted);
+        letter-spacing: 0.06em;
+    }
+    .highlight {
+        background: linear-gradient(120deg, var(--highlight-bg) 0%, var(--highlight-bg) 100%);
+        background-repeat: no-repeat;
+        background-size: 100% 40%;
+        background-position: 0 88%;
+        padding: 0 8px;
+        color: var(--highlight-text);
+        transition: background 0.3s, color 0.3s;
+    }
+
+    .section-title {
+        font-size: 1.1em;
+        font-weight: normal;
+        color: var(--accent);
+        letter-spacing: 0.2em;
+        margin-bottom: 18px;
+        text-transform: uppercase;
+    }
+
+    p { font-size: 1.1em; margin-bottom: 14px; }
+
+    .notice {
+        background: var(--notice-bg);
+        border-left: 4px solid var(--notice-border);
+        padding: 16px 22px;
+        border-radius: 0 10px 10px 0;
+    }
+    .notice p { font-size: 1em; margin-bottom: 8px; }
+    .notice p:last-child { margin-bottom: 0; }
+
+    a {
+        color: var(--accent);
+        text-decoration: none;
+        border-bottom: 1px solid transparent;
+        transition: border-color 0.2s, color 0.2s;
+    }
+    a:hover { border-bottom-color: var(--accent); }
+
+    /* —— 表单区域 —— */
+    .advice-form { display: flex; flex-direction: column; gap: 14px; }
+
+    .advice-form textarea {
+        width: 100%;
+        min-height: 150px;
+        resize: vertical;
+        padding: 14px 16px;
+        font-size: 1.05em;
+        font-family: inherit;
+        line-height: 1.7;
+        color: var(--text);
+        background: rgba(255, 255, 255, 0.5);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        backdrop-filter: blur(6px);
+        -webkit-backdrop-filter: blur(6px);
+        transition: border-color 0.2s, box-shadow 0.2s, background 0.3s;
+    }
+    html[data-theme="dark"] .advice-form textarea {
+        background: rgba(255, 255, 255, 0.06);
+    }
+    .advice-form textarea:focus {
+        outline: none;
+        border-color: var(--btn-bg);
+        box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.18);
+    }
+    .advice-form textarea::placeholder { color: var(--text-muted); }
+
+    /* —— 滑块人机验证 —— */
+    .slider-captcha {
+        user-select: none;
+        -webkit-user-select: none;
+        margin: 2px 0;
+    }
+    .slider-track {
+        position: relative;
+        height: 46px;
+        background: rgba(255, 255, 255, 0.5);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        overflow: hidden;
+        backdrop-filter: blur(6px);
+        -webkit-backdrop-filter: blur(6px);
+        transition: border-color 0.2s, background 0.3s;
+    }
+    html[data-theme="dark"] .slider-track { background: rgba(255, 255, 255, 0.06); }
+    .slider-captcha.passed .slider-track { border-color: #22C55E; }
+    .slider-captcha.failed .slider-track { border-color: #EF4444; }
+
+    .slider-fill {
+        position: absolute;
+        top: 0; left: 0; bottom: 0;
+        width: 0;
+        background: linear-gradient(90deg, rgba(14,165,233,0.25), rgba(99,102,241,0.25));
+        transition: background 0.2s;
+        pointer-events: none;
+    }
+    .slider-captcha.passed .slider-fill {
+        background: linear-gradient(90deg, rgba(34,197,94,0.3), rgba(34,197,94,0.45));
+    }
+    .slider-captcha.failed .slider-fill {
+        background: linear-gradient(90deg, rgba(239,68,68,0.3), rgba(239,68,68,0.45));
+    }
+
+    .slider-label {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.95em;
+        color: var(--text-muted);
+        pointer-events: none;
+        transition: opacity 0.2s, color 0.2s;
+        padding: 0 52px;
+        text-align: center;
+    }
+    .slider-captcha.passed .slider-label { color: #16A34A; }
+    .slider-captcha.failed .slider-label { color: #DC2626; }
+    html[data-theme="dark"] .slider-captcha.passed .slider-label { color: #4ADE80; }
+    html[data-theme="dark"] .slider-captcha.failed .slider-label { color: #F87171; }
+
+    .slider-thumb {
+        position: absolute;
+        top: 3px;
+        left: 3px;
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        background: var(--btn-bg);
+        color: var(--btn-text);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.1em;
+        cursor: grab;
+        box-shadow: 0 2px 10px rgba(14,165,233,0.35);
+        transition: background 0.2s, transform 0.1s;
+        touch-action: none;
+    }
+    .slider-thumb:active { cursor: grabbing; transform: scale(0.98); }
+    .slider-captcha.passed .slider-thumb { background: #22C55E; }
+    .slider-captcha.failed .slider-thumb { background: #EF4444; }
+
+    /* —— 提交区 —— */
+    .form-footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+    .char-count { font-size: 0.9em; color: var(--text-muted); }
+
+    .submit-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 11px 26px;
+        font-size: 1em;
+        font-family: inherit;
+        color: var(--btn-text);
+        background: var(--btn-bg);
+        border: none;
+        border-radius: 10px;
+        cursor: pointer;
+        box-shadow: 0 4px 14px rgba(14, 165, 233, 0.25);
+        transition: transform 0.2s, box-shadow 0.2s, background 0.3s, opacity 0.2s;
+    }
+    .submit-btn:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 22px rgba(14, 165, 233, 0.35);
+    }
+    .submit-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
+    }
+
+    .form-msg {
+        font-size: 1em;
+        min-height: 1.5em;
+        margin-top: 4px;
+    }
+    .form-msg.ok { color: #0a7d32; }
+    .form-msg.err { color: #c62828; }
+    html[data-theme="dark"] .form-msg.ok { color: #4ade80; }
+    html[data-theme="dark"] .form-msg.err { color: #f87171; }
+
+    .btn {
+        padding: 10px 22px;
+        border-radius: 10px;
+        border: 1px solid var(--border);
+        background: rgba(255, 255, 255, 0.5);
+        color: var(--text);
+        font-size: 0.95em;
+        font-family: inherit;
+        cursor: pointer;
+        backdrop-filter: blur(6px);
+        transition: background 0.2s, transform 0.15s, color 0.2s, border-color 0.2s;
+    }
+    html[data-theme="dark"] .btn { background: rgba(255, 255, 255, 0.06); }
+    .btn:hover {
+        background: var(--btn-bg);
+        color: var(--btn-text);
+        border-color: var(--btn-bg);
+        transform: translateY(-2px);
+    }
+
+    #backToTop {
+        position: fixed;
+        right: 24px; bottom: 24px;
+        width: 48px; height: 48px;
+        border-radius: 50%;
+        background: var(--btn-bg);
+        color: var(--btn-text);
+        font-size: 1.3em;
+        border: none;
+        cursor: pointer;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 4px 16px rgba(14, 165, 233, 0.3);
+        transition: transform 0.2s, box-shadow 0.2s;
+        z-index: 999;
+    }
+    #backToTop.show { display: flex; }
+    #backToTop:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(14, 165, 233, 0.45); }
+
+    @media (max-width: 600px) {
+        body { padding: 24px 14px; }
+        .card { padding: 22px 18px; }
+        .page-header h1 { font-size: 1.7em; }
+        .page-header .sub { font-size: 1em; }
+        .section-title { font-size: 1em; }
+        p { font-size: 1em; }
+        #backToTop { right: 16px; bottom: 16px; width: 44px; height: 44px; }
+        .back-home {
+            top: 12px;
+            left: 12px;
+            padding: 8px 14px;
+            font-size: 0.85em;
+        }
+        .form-footer { flex-direction: column; align-items: stretch; }
+        .submit-btn { width: 100%; justify-content: center; }
+    }
+</style>
+</head>
+<body>
+
+    <a class="back-home" href="https://pillager-outpost.github.io/2901space" title="返回 2901 Space">
+        <span class="arrow-back">←</span> 返回
+    </a>
+
+    <div class="container">
+
+        <div class="card">
+            <div class="page-header">
+                <h1><span class="highlight">匿名建议</span></h1>
+                <p class="sub">你的每一条建议，都会被认真对待</p>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2 class="section-title">写下你的想法</h2>
+            <form class="advice-form" id="adviceForm">
+                <textarea id="info" maxlength="1000" placeholder="请在这里写下你对 2901 Space 的建议、反馈或想法…"></textarea>
+
+                <!-- 滑块人机验证 -->
+                <div class="slider-captcha" id="sliderCaptcha">
+                    <div class="slider-track">
+                        <div class="slider-fill" id="sliderFill"></div>
+                        <span class="slider-label" id="sliderLabel">按住滑块，拖动到最右侧 →</span>
+                        <div class="slider-thumb" id="sliderThumb">→</div>
+                    </div>
+                </div>
+
+                <div class="form-footer">
+                    <span class="char-count"><span id="charCount">0</span> / 1000</span>
+                    <button type="submit" class="submit-btn" id="submitBtn" disabled>匿名提交</button>
+                </div>
+                <p class="form-msg" id="formMsg"></p>
+            </form>
+        </div>
+
+        <div class="card">
+            <div class="notice">
+                <p><strong>-关于匿名</strong></p>
+                <p>本表单不会收集你的姓名、账号或身份信息，提交内容仅用于改进产品与体验。</p>
+            </div>
+        </div>
+
+        <div class="card">
+            <div style="margin-top:4px">
+                <button id="themeToggle" class="btn">🌙 深色模式</button>
+            </div>
+        </div>
+
+    </div>
+
+    <button id="backToTop" title="返回顶部">↑</button>
+
+    <script>
+        function safeGet(k){ try { return localStorage.getItem(k); } catch(e){ return null; } }
+        function safeSet(k,v){ try { localStorage.setItem(k,v); } catch(e){} }
+
+        /* ===== 返回顶部 ===== */
+        var backToTop = document.getElementById('backToTop');
+        window.addEventListener('scroll', function () {
+            backToTop.classList.toggle('show', window.scrollY > 300);
+        });
+        backToTop.addEventListener('click', function () {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+
+        /* ===== 主题切换 ===== */
+        var themeToggle = document.getElementById('themeToggle');
+        var root = document.documentElement;
+        function applyTheme(t) {
+            root.setAttribute('data-theme', t);
+            themeToggle.textContent = t === 'dark' ? '☀️ 浅色模式' : '🌙 深色模式';
+        }
+        function getInitialTheme() {
+            var s = safeGet('theme');
+            if (s === 'dark' || s === 'light') return s;
+            try { return matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'; }
+            catch(e){ return 'light'; }
+        }
+        applyTheme(getInitialTheme());
+        themeToggle.addEventListener('click', function () {
+            var next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+            applyTheme(next);
+            safeSet('theme', next);
+        });
+
+        /* ===== Supabase 配置 ===== */
+        var SUPABASE_URL = 'https://htufjnhmowvfocwukrft.supabase.co';
+        var SUPABASE_ANON_KEY = 'sb_publishable_X5i03Y12PA5L71QARR9TIw_6FOlJpVr'; // 建议在控制台轮换后再用
+
+        var form = document.getElementById('adviceForm');
+        var textarea = document.getElementById('info');
+        var submitBtn = document.getElementById('submitBtn');
+        var formMsg = document.getElementById('formMsg');
+        var charCount = document.getElementById('charCount');
+
+        /* ===== 字数统计 ===== */
+        textarea.addEventListener('input', function () {
+            charCount.textContent = textarea.value.length;
+        });
+
+        /* ===== 自实现滑块人机验证 ===== */
+        var captchaPassed = false;
+
+        (function () {
+            var captcha = document.getElementById('sliderCaptcha');
+            var track   = captcha.querySelector('.slider-track');
+            var thumb   = document.getElementById('sliderThumb');
+            var fill    = document.getElementById('sliderFill');
+            var label   = document.getElementById('sliderLabel');
+
+            var THUMB_W = 40, PAD = 3;
+            var dragging = false;
+            var startX = 0, curX = 0;
+            var moveCount = 0, startTime = 0;
+
+            function trackMax() { return track.clientWidth - THUMB_W - PAD * 2; }
+
+            function setPos(x) {
+                curX = Math.max(0, Math.min(x, trackMax()));
+                thumb.style.left = (PAD + curX) + 'px';
+                fill.style.width = (PAD + curX + THUMB_W / 2) + 'px';
+            }
+
+            function reset() {
+                captchaPassed = false;
+                captcha.classList.remove('passed', 'failed');
+                label.textContent = '按住滑块，拖动到最右侧 →';
+                thumb.textContent = '→';
+                setPos(0);
+                submitBtn.disabled = true;
+            }
+
+            function pass() {
+                captchaPassed = true;
+                captcha.classList.remove('failed');
+                captcha.classList.add('passed');
+                setPos(trackMax());
+                thumb.textContent = '✓';
+                label.textContent = '验证通过';
+                submitBtn.disabled = false;
+            }
+
+            function fail(msg) {
+                captchaPassed = false;
+                captcha.classList.remove('passed');
+                captcha.classList.add('failed');
+                label.textContent = msg || '验证失败，请重试';
+                submitBtn.disabled = true;
+                setTimeout(reset, 900);
+            }
+
+            function getPoint(e) {
+                if (e.touches && e.touches[0]) return { x: e.touches[0].clientX };
+                return { x: e.clientX };
+            }
+
+            function onDown(e) {
+                if (captchaPassed) return;
+                dragging = true;
+                moveCount = 0;
+                startTime = Date.now();
+                var p = getPoint(e);
+                startX = p.x - curX;
+                e.preventDefault();
+            }
+
+            function onMove(e) {
+                if (!dragging) return;
+                var p = getPoint(e);
+                moveCount++;
+                setPos(p.x - startX);
+                e.preventDefault();
+            }
+
+            function onUp() {
+                if (!dragging) return;
+                dragging = false;
+                var elapsed = Date.now() - startTime;
+                var max = trackMax();
+                var diff = Math.abs(curX - max);
+
+                if (diff <= 3 && moveCount >= 4 && elapsed >= 150) {
+                    pass();
+                } else if (diff <= 3) {
+                    fail('操作异常，请重试');
+                } else if (diff <= max * 0.15) {
+                    fail('差一点，请拖到最右侧');
+                } else {
+                    reset();
+                }
+            }
+
+            thumb.addEventListener('mousedown', onDown);
+            document.addEventListener('mousemove', onMove);
+            document.addEventListener('mouseup', onUp);
+
+            thumb.addEventListener('touchstart', onDown, { passive: false });
+            document.addEventListener('touchmove', onMove, { passive: false });
+            document.addEventListener('touchend', onUp);
+
+            // 暴露给提交成功后重置
+            window.__resetCaptcha = reset;
+        })();
+
+        /* ===== 提交逻辑 ===== */
+        form.addEventListener('submit', async function (e) {
+            e.preventDefault();
+
+            if (!captchaPassed) {
+                formMsg.textContent = '请先完成滑块验证';
+                formMsg.className = 'form-msg err';
+                return;
+            }
+
+            var info = textarea.value.trim();
+            if (!info) {
+                formMsg.textContent = '请先写点内容再提交～';
+                formMsg.className = 'form-msg err';
+                return;
+            }
+
+            submitBtn.disabled = true;
+            formMsg.textContent = '提交中…';
+            formMsg.className = 'form-msg';
+
+            try {
+                var res = await fetch(SUPABASE_URL + '/rest/v1/advice', {
+                    method: 'POST',
+                    headers: {
+                        'apikey': SUPABASE_ANON_KEY,
+                        'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+                        'Content-Type': 'application/json',
+                        'Prefer': 'return=minimal'
+                    },
+                    body: JSON.stringify({ info: info })
+                });
+
+                if (res.ok) {
+                    formMsg.textContent = '✅ 提交成功，感谢你的建议！';
+                    formMsg.className = 'form-msg ok';
+                    textarea.value = '';
+                    charCount.textContent = '0';
+                    if (window.__resetCaptcha) window.__resetCaptcha();
+                } else {
+                    var t = await res.text();
+                    formMsg.textContent = '❌ 提交失败：' + t;
+                    formMsg.className = 'form-msg err';
+                    submitBtn.disabled = !captchaPassed;
+                }
+            } catch (err) {
+                formMsg.textContent = '❌ 网络错误：' + err.message;
+                formMsg.className = 'form-msg err';
+                submitBtn.disabled = !captchaPassed;
+            }
+        });
+    </script>
+</body>
+</html>
