@@ -437,7 +437,7 @@
             }
         });
 
-        // ========== 问候语 ==========
+        // ========== 动态问候语 ==========
         var hour = new Date().getHours();
         var greeting = "你好";
         if (hour >= 5 && hour < 11) greeting = "早上好";
@@ -459,22 +459,28 @@
             '发布错题': { icon: '📝', text: '发布生物错题统计', href: '#' },
             '通知板': { icon: '📢', text: '通知板', href: '#' },
             '图库': { icon: '🖼️', text: '2901 图库', href: '#' },
-            '自由发挥': { icon: '🎨', text: '自由发挥区一览', href: '#' }
+            '自由发挥': { icon: '🎨', text: '自由发挥区一览', href: '#' },
+            '审核用户': { icon: '🛡️', text: '审核用户', href: 'https://pillager-outpost.github.io/2901space/review.html' },
+            '彩蛋收集站': { icon: '🥚', text: '彩蛋收集站', href: 'https://pillager-outpost.github.io/2901space/eggs.html' }
         };
 
         var PERMISSIONS = {
             'guest': ['图库'], 
             'student': ['错题统计', '图库', '通知板', '自由发挥'],
             'teacher': ['错题结果', '通知板', '图库'],
-            'admin': ['发布错题', '通知板', '图库', '错题统计', '错题结果', '自由发挥']
+            'admin': ['发布错题', '通知板', '图库', '错题统计', '错题结果', '自由发挥', '审核用户']
         };
 
         function renderMenus(level) {
-            var safeLevel = PERMISSIONS[level] ? level : 'guest';
+            // 无 level 降级为访客
+            var safeLevel = PERMISSIONS[level] ? level : 'guest'; 
             var allowed = PERMISSIONS[safeLevel];
             
+            // 所有角色都要加上“彩蛋收集站”
+            var fullAllowed = allowed.concat(['彩蛋收集站']);
+
             var html = '';
-            allowed.forEach(function(key) {
+            fullAllowed.forEach(function(key) {
                 var menu = MENUS[key];
                 if (menu) {
                     html += `<a class="menu-item" href="${menu.href}">
