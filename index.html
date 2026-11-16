@@ -57,7 +57,6 @@
         transition: background 0.4s, color 0.3s;
     }
 
-    /* ========== 顶部固定栏 ========== */
     .topbar {
         position: fixed;
         top: 0;
@@ -128,7 +127,6 @@
         border-color: var(--btn-bg);
     }
 
-    /* ========== 容器 ========== */
     .container { max-width: 820px; margin: 0 auto; }
 
     @keyframes fadeUp {
@@ -449,7 +447,6 @@
     #backToTop.show { display: flex; }
     #backToTop:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(14, 165, 233, 0.45); }
 
-    /* ========== 弹窗 ========== */
     .modal-overlay {
         position: fixed;
         inset: 0;
@@ -549,7 +546,6 @@
     }
     .egg-help:hover { background: var(--accent); color: #fff; }
 
-    /* ========== 响应式 ========== */
     @media (max-width: 600px) {
         body { padding: 88px 14px 24px; }
         .topbar { height: 56px; padding: 0 14px; }
@@ -571,7 +567,6 @@
 </head>
 <body>
 
-    <!-- 顶部固定栏 -->
     <div class="topbar">
         <a class="topbar-brand" href="https://pillager-outpost.github.io/2901space/">2901 Space</a>
         <div class="topbar-actions">
@@ -605,7 +600,6 @@
             <div class="fold download">
                 <button class="fold-toggle" type="button">⬇ 2901 Island 下载 <span class="arrow">▾</span></button>
                 <div class="fold-list">
-
                     <div class="download-inner">
                         <a href="https://pillager-outpost.github.io/2901space/2901_island_downloader_windows.exe" download>Windows</a>
                         <a href="https://pillager-outpost.github.io/2901space/android.zip" download>Android</a>
@@ -627,7 +621,6 @@
                     </div>
 
                     <a class="sub-link" href="https://pillager-outpost.github.io/2901space/introduction.html#island">📖 功能介绍</a>
-
                 </div>
             </div>
 
@@ -666,7 +659,7 @@
                 <h2 class="modal-title">恭喜获得彩蛋 #1</h2>
                 <button class="egg-help" id="eggHelp" type="button" title="彩蛋说明">?</button>
             </div>
-            <p class="modal-desc">这是你的专属兑换码，请在软件里兑换：</p>
+            <p class="modal-desc">这是你的专属兑换码，请前往 <a href="https://pillager-outpost.github.io/2901space/eggs.html" target="_blank">eggs.html</a> 兑换：</p>
             <div class="modal-code-row">
                 <code class="modal-code" id="eggCode">crackawatheqwqcode2901</code>
                 <button class="copy-hash" type="button" data-target="eggCode">复制</button>
@@ -681,7 +674,7 @@
             <h2 class="modal-title">关于彩蛋</h2>
             <p class="modal-desc" style="text-align:left; line-height:1.8">
                 彩蛋是开发者的小心思，集齐 9 个会？？？<br>
-                <strong>提示：下一个彩蛋在软件里。</strong>
+                <strong>提示：在登录后的首页，多点击那些飘浮的泡泡。</strong>
             </p>
             <button class="modal-close" id="helpClose" type="button">知道了</button>
         </div>
