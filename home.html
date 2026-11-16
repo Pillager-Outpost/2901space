@@ -293,8 +293,11 @@
     /* ========== 彩蛋弹窗 ========== */
     .egg-box { text-align: center; }
     .egg-emoji { font-size: 3em; margin-bottom: 12px; display: block; }
-    .egg-title { font-size: 1.4em; color: var(--accent); margin-bottom: 10px; }
-    .egg-desc { font-size: 0.95em; color: var(--text-muted); margin-bottom: 20px; }
+    .egg-title { font-size: 1.4em; color: var(--accent); margin-bottom: 10px; font-weight: normal;}
+    .egg-desc { font-size: 0.95em; color: var(--text-muted); margin-bottom: 20px; line-height:1.6;}
+    .egg-desc a { color: var(--accent); text-decoration: none; border-bottom: 1px dashed var(--accent); }
+    .egg-desc a:hover { border-bottom-style: solid; }
+    
     .egg-code-row {
         display: flex; align-items: center; gap: 8px; justify-content: center; margin-bottom: 24px;
     }
@@ -304,6 +307,7 @@
         background: var(--bg-hover); padding: 8px 16px;
         border-radius: 10px; border: 1px dashed var(--accent); user-select: all;
     }
+    .egg-hint { font-size: 0.85em; color: var(--text-muted); margin-top: 16px; }
 
     @media (max-width: 600px) {
         body { padding: 16px; }
@@ -367,7 +371,13 @@
         <div class="modal-box egg-box">
             <span class="egg-emoji">🫧</span>
             <h2 class="egg-title">恭喜获得彩蛋 #2</h2>
-            <p class="egg-desc">你找到了隐藏在泡泡里的彩蛋！兑换码如下：</p>
+            
+            <p class="egg-desc">
+                这是你的专属兑换码，请前往 <a href="https://pillager-outpost.github.io/2901space/eggs.html" target="_blank">eggs.html</a> 兑换：<br>
+                <strong>什么是彩蛋？</strong> 彩蛋是开发者留下的小惊喜，集齐 9 个会触发神秘事件！<br>
+                <span style="color:var(--accent); font-size:0.9em; font-weight:bold;">（提示：下一个彩蛋藏在 404.html 页面里）</span>
+            </p>
+
             <div class="egg-code-row">
                 <code class="egg-code" id="eggCode">qwqeasteregg</code>
                 <button class="btn outline" style="width:auto; margin:0; padding:6px 12px;" id="copyEggBtn">复制</button>
@@ -427,7 +437,7 @@
             }
         });
 
-        // ========== 动态问候语 ==========
+        // ========== 问候语 ==========
         var hour = new Date().getHours();
         var greeting = "你好";
         if (hour >= 5 && hour < 11) greeting = "早上好";
@@ -460,7 +470,7 @@
         };
 
         function renderMenus(level) {
-            var safeLevel = PERMISSIONS[level] ? level : 'guest'; // 无 level 降级访客
+            var safeLevel = PERMISSIONS[level] ? level : 'guest';
             var allowed = PERMISSIONS[safeLevel];
             
             var html = '';
