@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>审核中心 · 2901 Space</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛡️</text></svg>">
+<style>
+    :root {
+        --bg1: #E0F2FE;
+        --bg2: #F0FDF4;
+        --card: rgba(255, 255, 255, 0.9);
+        --text: #1E293B;
+        --text-muted: #64748B;
+        --border: rgba(203, 213, 225, 0.6);
+        --accent: #0EA5E9;
+        --btn-bg: #0EA5E9;
+        --btn-text: #fff;
+        --shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+        --bg-hover: #f8fafc;
+        --danger: #ef4444;
+        --success: #10b981;
+        --warning: #f59e0b;
+        --primary: #3b82f6;
+    }
+    html[data-theme="dark"] {
+        --bg1: #0B1120;
+        --bg2: #111827;
+        --card: rgba(30, 41, 59, 0.9);
+        --text: #E2E8F0;
+        --text-muted: #94A3B8;
+        --border: rgba(51, 65, 85, 0.8);
+        --accent: #38BDF8;
+        --btn-bg: #38BDF8;
+        --btn-text: #0B1120;
+        --shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+        --bg-hover: #1e293b;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+        background: linear-gradient(160deg, var(--bg1), var(--bg2));
+        background-attachment: fixed;
+        color: var(--text);
+        font-family: "华文中宋", "STZhongsong", "SimSun", serif;
+        line-height: 1.8;
+        min-height: 100vh;
+        padding: 24px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .container {
+        max-width: 800px;
+        width: 100%;
+        animation: fadeUp 0.5s ease both;
+    }
+
+    @keyframes fadeUp {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* 顶部导航 */
+    .header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 24px;
+    }
+    .header h1 {
+        font-size: 1.6em;
+        font-weight: normal;
+    }
+    .header a {
+        color: var(--accent);
+        text-decoration: none;
+        font-size: 0.95em;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .header a:hover { text-decoration: underline; }
+
+    /* 表格卡片 */
+    .card {
+        background: var(--card);
+        backdrop-filter: blur(12px);
+        border: 1px solid var(--border);
+        border-radius: 18px;
+        padding: 24px;
+        box-shadow: var(--shadow);
+        overflow-x: auto;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        text-align: left;
+    }
+    th, td {
+        padding: 14px 12px;
+        border-bottom: 1px solid var(--border);
+    }
+    th {
+        font-weight: normal;
+        color: var(--text-muted);
+        font-size: 0.9em;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+    }
+    td {
+        font-size: 1em;
+    }
+    tr:last-child td {
+        border-bottom: none;
+    }
+
+    /* 按钮组 */
+    .actions {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+    .btn {
+        padding: 6px 14px;
+        font-size: 0.85em;
+        border-radius: 8px;
+        cursor: pointer;
+        border: none;
+        color: #fff;
+        transition: 0.2s;
+        font-family: inherit;
+    }
+    .btn:hover { opacity: 0.8; transform: translateY(-1px); }
+    .btn-reject { background: var(--danger); }
+    .btn-student { background: var(--success); }
+    .btn-teacher { background: var(--warning); }
+    .btn-admin { background: var(--primary); }
+    
+    .empty-msg {
+        text-align: center;
+        padding: 40px 0;
+        color: var(--text-muted);
+    }
+
+    /* 加载圈 */
+    .loading {
+        text-align: center;
+        padding: 40px 0;
+        color: var(--text-muted);
+    }
+
+    /* 主题切换按钮 */
+    #themeToggle {
+        position: fixed;
+        top: 20px; right: 20px;
+        width: 44px; height: 44px;
+        border-radius: 50%;
+        border: 1px solid var(--border);
+        background: var(--card);
+        color: var(--text);
+        font-size: 1.2em;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: var(--shadow);
+        transition: transform 0.2s;
+        z-index: 999;
+    }
+    #themeToggle:hover { transform: scale(1.08); }
+
+    @media (max-width: 600px) {
+        body { padding: 16px; }
+        .card { padding: 16px; }
+        th, td { padding: 10px 8px; }
+        .btn { padding: 4px 10px; font-size: 0.8em; }
+    }
+</style>
+</head>
+<body>
+
+    <button id="themeToggle" title="切换深色/浅色模式">🌙</button>
+
+    <div class="container">
+        <div class="header">
+            <h1>审核中心</h1>
+            <a href="https://pillager-outpost.github.io/2901space/home.html">← 返回首页</a>
+        </div>
+
+        <div class="card">
+            <table>
+                <thead>
+                    <tr>
+                        <th>用户名 / 真实姓名</th>
+                        <th>密码</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    <tr><td colspan="3" class="loading">正在校验身份并加载数据...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        function safeGet(k){ try { return localStorage.getItem(k); } catch(e){ return null; } }
+        function safeSet(k,v){ try { localStorage.setItem(k,v); } catch(e){} }
+
+        // 主题控制
+        var themeToggle = document.getElementById('themeToggle');
+        var root = document.documentElement;
+        function applyTheme(t) {
+            root.setAttribute('data-theme', t);
+            if (themeToggle) themeToggle.textContent = t === 'dark' ? '☀️' : '🌙';
+        }
+        function getInitialTheme() {
+            var s = safeGet('theme');
+            if (s === 'dark' || s === 'light') return s;
+            try { return matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'; }
+            catch(e){ return 'light'; }
+        }
+        applyTheme(getInitialTheme());
+        if (themeToggle) {
+            themeToggle.addEventListener('click', function () {
+                var next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+                applyTheme(next);
+                safeSet('theme', next);
+            });
+        }
+
+        // ========== 核心逻辑 ==========
+        var SUPABASE_URL = 'https://htufjnhmowvfocwukrft.supabase.co';
+        var FUNC_URL = SUPABASE_URL + '/functions/v1/review';
+        var SUPABASE_ANON_KEY = 'sb_publishable_X5i03Y12PA5L71QARR9TIw_6FOlJpVr';
+
+        var currentUsername = safeGet('username');
+        var token = safeGet('token');
+        var tableBody = document.getElementById('tableBody');
+
+        if (!currentUsername || !token) {
+            window.location.href = 'https://pillager-outpost.github.io/2901space/login.html';
+        } else {
+            initReview();
+        }
+
+        async function initReview() {
+            try {
+                // 1. 请求列表
+                var res = await fetch(FUNC_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'apikey': SUPABASE_ANON_KEY,
+                        'Authorization': 'Bearer ' + SUPABASE_ANON_KEY
+                    },
+                    body: JSON.stringify({
+                        action: 'list',
+                        currentUser: currentUsername
+                    })
+                });
+
+                var data = await res.json();
+                
+                if (!res.ok || !data.ok) {
+                    // 不是 admin 或出错，直接踢回主页
+                    alert(data.msg || '身份验证失败');
+                    window.location.href = 'https://pillager-outpost.github.io/2901space/home.html';
+                    return;
+                }
+
+                renderTable(data.reviews);
+
+            } catch (e) {
+                console.error(e);
+                tableBody.innerHTML = `<tr><td colspan="3" class="empty-msg" style="color:var(--danger)">网络错误，请刷新重试</td></tr>`;
+            }
+        }
+
+        function renderTable(reviews) {
+            if (!reviews || reviews.length === 0) {
+                tableBody.innerHTML = `<tr><td colspan="3" class="empty-msg">当前没有待审核的用户</td></tr>`;
+                return;
+            }
+
+            var html = '';
+            reviews.forEach(function(item) {
+                // 还原显示真实的用户名（去掉 _0 和 0_）
+                var displayName = item.username;
+                var realName = "";
+                var match = item.username.match(/^(.*?)_0(.*?)0_$/);
+                if (match) {
+                    displayName = match[1];
+                    realName = match[2];
+                }
+
+                html += `
+                    <tr>
+                        <td>
+                            <strong>${displayName}</strong><br>
+                            <span style="font-size:0.85em; color:var(--text-muted)">${realName}</span>
+                        </td>
+                        <td style="font-family:monospace">${item.password}</td>
+                        <td>
+                            <div class="actions">
+                                <button class="btn btn-reject" onclick="processReview('reject', '${item.username}', '${item.password}')">拒绝</button>
+                                <button class="btn btn-student" onclick="processReview('approve', '${item.username}', '${item.password}', 'student')">加学生</button>
+                                <button class="btn btn-teacher" onclick="processReview('approve', '${item.username}', '${item.password}', 'teacher')">加教师</button>
+                                <button class="btn btn-admin" onclick="processReview('approve', '${item.username}', '${item.password}', 'admin')">加管理</button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            });
+            tableBody.innerHTML = html;
+        }
+
+        // 处理动作
+        window.processReview = async function(action, targetUser, targetPass, targetLevel) {
+            var confirmMsg = action === 'reject' ? '确定要拒绝并删除该申请吗？' : `确定将他设为 ${targetLevel} 并加入系统吗？`;
+            if (!confirm(confirmMsg)) return;
+
+            try {
+                var res = await fetch(FUNC_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'apikey': SUPABASE_ANON_KEY,
+                        'Authorization': 'Bearer ' + SUPABASE_ANON_KEY
+                    },
+                    body: JSON.stringify({
+                        action: action,
+                        currentUser: currentUsername,
+                        targetUser: targetUser,
+                        targetPass: targetPass,
+                        targetLevel: targetLevel
+                    })
+                });
+
+                var data = await res.json();
+                if (data.ok) {
+                    alert(data.msg || '操作成功');
+                    initReview(); // 重新加载列表
+                } else {
+                    alert(data.msg || '操作失败');
+                }
+            } catch (e) {
+                console.error(e);
+                alert('网络错误');
+            }
+        };
+    </script>
+</body>
+</html>
