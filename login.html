@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>登录 · 2901 Space</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏝️</text></svg>">
+<style>
+    /* ========== 主题与可配置变量 ========== */
+    :root {
+        --bg1: #E0F2FE;
+        --bg2: #F0FDF4;
+        --card: rgba(255, 255, 255, 0.9);
+        --text: #1E293B;
+        --text-muted: #64748B;
+        --border: rgba(203, 213, 225, 0.6);
+        --accent: #0EA5E9;
+        --input-bg: #fff;
+        --btn-bg: #0EA5E9;
+        --btn-text: #fff;
+        --error: #DC2626;
+        --ok: #16A34A;
+        --shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+
+        /* ===== 小人配置 ===== */
+        --shape1: #F59E0B;      /* 扇形颜色 */
+        --shape2: #0EA5E9;      /* 长方形颜色 */
+        --shape3: #10B981;      /* 三角形颜色 */
+        --eye-white: #fff;
+        --eye-pupil: #1E293B;
+        --mouth: #1E293B;
+        --watcher-gap: 16px;    /* 小人之间的间距 */
+        --watcher-margin: 24px; /* 小人区域下方的间距 */
+    }
+    html[data-theme="dark"] {
+        --bg1: #0B1120;
+        --bg2: #111827;
+        --card: rgba(30, 41, 59, 0.9);
+        --text: #E2E8F0;
+        --text-muted: #94A3B8;
+        --border: rgba(51, 65, 85, 0.8);
+        --accent: #38BDF8;
+        --input-bg: #1C2228;
+        --btn-bg: #38BDF8;
+        --btn-text: #0B1120;
+        --error: #F87171;
+        --ok: #4ADE80;
+        --shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+
+        /* 深色模式下的默认小人颜色 */
+        --shape1: #FBBF24;
+        --shape2: #38BDF8;
+        --shape3: #34D399;
+        --eye-white: #E2E8F0;
+        --eye-pupil: #0B1120;
+        --mouth: #E2E8F0;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+        background: linear-gradient(160deg, var(--bg1), var(--bg2));
+        background-attachment: fixed;
+        color: var(--text);
+        font-family: "华文中宋", "STZhongsong", "SimSun", serif;
+        line-height: 1.8;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+        transition: background 0.4s, color 0.3s;
+    }
+
+    .card {
+        background: var(--card);
+        backdrop-filter: blur(12px);
+        border: 1px solid var(--border);
+        border-radius: 18px;
+        padding: 32px 28px;
+        max-width: 420px;
+        width: 100%;
+        box-shadow: var(--shadow);
+        animation: fadeUp 0.5s ease both;
+    }
+
+    @keyframes fadeUp {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ========== 小人区域 ========== */
+    .watchers {
+        display: flex;
+        justify-content: center;
+        align-items: flex-end;
+        gap: var(--watcher-gap);
+        height: 80px;
+        margin-bottom: var(--watcher-margin);
+    }
+
+    .watcher {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        transform-origin: center bottom;
+        transform: rotate(20deg) translateX(0);
+        transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    /* 输入密码时左倾、平移 */
+    body.look-left .watcher:nth-child(1) { transform: rotate(-20deg) translateX(-12px); transition-delay: 0s; }
+    body.look-left .watcher:nth-child(2) { transform: rotate(-20deg) translateX(-8px);  transition-delay: 0.05s; }
+    body.look-left .watcher:nth-child(3) { transform: rotate(-20deg) translateX(-4px);  transition-delay: 0.1s; }
+
+    .body-shape {
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* 扇形 */
+    .shape-sector {
+        width: 42px;
+        height: 42px;
+        background: conic-gradient(from 210deg, var(--shape1) 0deg 120deg, transparent 120deg);
+        border-radius: 4px;
+    }
+
+    /* 长方形 */
+    .shape-rect {
+        width: 36px;
+        height: 46px;
+        background: var(--shape2);
+        border-radius: 4px;
+    }
+
+    /* 三角形 */
+    .shape-triangle {
+        width: 48px;
+        height: 46px;
+        background: var(--shape3);
+        clip-path: polygon(50% 0%, 100% 100%, 0% 100%);
+        border-radius: 0;
+    }
+
+    /* ========== 眼睛 ========== */
+    .eyes {
+        position: absolute;
+        display: flex;
+        gap: 4px;
+        transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .eye {
+        width: 8px;
+        height: 8px;
+        background: var(--eye-white);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.08);
+        overflow: hidden;
+        transition: height 0.12s ease;
+    }
+    .eye.blink { height: 1px; }
+
+    .eye::after {
+        content: "";
+        width: 4px;
+        height: 4px;
+        background: var(--eye-pupil);
+        border-radius: 50%;
+        transform: translateX(1px);
+        transition: transform 0.35s;
+    }
+
+    body.look-left .eye::after { transform: translateX(-1px); }
+    body.look-left .eyes { transform: translateX(-2px); }
+
+    .shape-sector .eyes { top: 16px; }
+    .shape-rect .eyes { top: 13px; }
+    .shape-triangle .eyes { top: 21px; }
+
+    /* ========== 嘴 ========== */
+    .mouth {
+        position: absolute;
+        width: 7px;
+        height: 3px;
+        background: var(--mouth);
+        border-radius: 0 0 6px 6px;
+        transition: height 0.15s ease, border-radius 0.15s ease;
+    }
+    .mouth.open {
+        height: 5px;
+        border-radius: 0 0 8px 8px;
+    }
+    .shape-sector .mouth { top: 27px; }
+    .shape-rect .mouth { top: 29px; }
+    .shape-triangle .mouth { top: 33px; }
+
+    /* ========== 表单区 ========== */
+    .title { text-align: center; font-size: 1.8em; font-weight: normal; margin-bottom: 6px; }
+    .subtitle { text-align: center; font-size: 0.95em; color: var(--text-muted); margin-bottom: 24px; }
+
+    label { display: block; font-size: 0.9em; color: var(--text-muted); margin-bottom: 6px; }
+
+    input[type="text"],
+    input[type="password"] {
+        width: 100%;
+        padding: 12px 14px;
+        font-size: 1em;
+        font-family: inherit;
+        color: var(--text);
+        background: var(--input-bg);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        outline: none;
+        transition: border-color 0.2s;
+        margin-bottom: 16px;
+    }
+    input:focus { border-color: var(--accent); }
+
+    .btn {
+        width: 100%;
+        padding: 13px 16px;
+        font-size: 1.05em;
+        font-family: inherit;
+        color: var(--btn-text);
+        background: var(--btn-bg);
+        border: none;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: transform 0.15s, box-shadow 0.2s, opacity 0.2s;
+        box-shadow: 0 4px 14px rgba(14, 165, 233, 0.25);
+    }
+    .btn:hover { transform: translateY(-2px); }
+    .btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+    .msg { margin-top: 16px; font-size: 0.95em; text-align: center; min-height: 1.6em; }
+    .msg.error { color: var(--error); }
+    .msg.ok { color: var(--ok); }
+
+    .back {
+        display: block;
+        text-align: center;
+        margin-top: 22px;
+        font-size: 0.9em;
+        color: var(--text-muted);
+        text-decoration: none;
+        border-bottom: 1px dashed var(--text-muted);
+        width: fit-content;
+        margin-left: auto;
+        margin-right: auto;
+    }
+    .back:hover { color: var(--accent); border-bottom-color: var(--accent); }
+
+    #themeToggle {
+        position: fixed;
+        top: 20px; right: 20px;
+        width: 44px; height: 44px;
+        border-radius: 50%;
+        border: 1px solid var(--border);
+        background: var(--card);
+        color: var(--text);
+        font-size: 1.2em;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: var(--shadow);
+        transition: transform 0.2s;
+        z-index: 999;
+    }
+    #themeToggle:hover { transform: scale(1.08); }
+
+    @media (max-width: 600px) {
+        .card { padding: 24px 18px; }
+        .title { font-size: 1.5em; }
+        .watchers { height: 70px; margin-bottom: 16px; --watcher-gap: 12px; }
+        .shape-sector { width: 36px; height: 36px; }
+        .shape-rect { width: 30px; height: 38px; }
+        .shape-triangle { width: 40px; height: 38px; }
+        #themeToggle { top: 14px; right: 14px; width: 38px; height: 38px; font-size: 1em; }
+    }
+</style>
+</head>
+<body>
+
+    <button id="themeToggle" title="切换深色/浅色模式">🌙</button>
+
+    <div class="card">
+
+        <!-- 三个小人 -->
+        <div class="watchers">
+            <div class="watcher">
+                <div class="body-shape shape-sector">
+                    <div class="eyes"><span class="eye"></span><span class="eye"></span></div>
+                    <div class="mouth"></div>
+                </div>
+            </div>
+            <div class="watcher">
+                <div class="body-shape shape-rect">
+                    <div class="eyes"><span class="eye"></span><span class="eye"></span></div>
+                    <div class="mouth"></div>
+                </div>
+            </div>
+            <div class="watcher">
+                <div class="body-shape shape-triangle">
+                    <div class="eyes"><span class="eye"></span><span class="eye"></span></div>
+                    <div class="mouth"></div>
+                </div>
+            </div>
+        </div>
+
+        <h1 class="title">登录</h1>
+        <p class="subtitle">使用注册时的信息登录</p>
+
+        <label for="username">用户名</label>
+        <input type="text" id="username" placeholder="注册时填的用户名" autocomplete="off">
+
+        <label for="realname">真实姓名</label>
+        <input type="text" id="realname" placeholder="注册时填的真实姓名" autocomplete="off">
+
+        <label for="password">密码</label>
+        <input type="password" id="password" placeholder="注册时填的密码" autocomplete="current-password">
+
+        <button class="btn" id="loginBtn" type="button">登录</button>
+
+        <p class="msg" id="msg"></p>
+
+        <a class="back" href="https://pillager-outpost.github.io/2901space/">← 返回首页</a>
+    </div>
+
+    <script>
+        function safeGet(k){ try { return localStorage.getItem(k); } catch(e){ return null; } }
+        function safeSet(k,v){ try { localStorage.setItem(k,v); } catch(e){} }
+
+        // 主题
+        var themeToggle = document.getElementById('themeToggle');
+        var root = document.documentElement;
+        function applyTheme(t) {
+            root.setAttribute('data-theme', t);
+            if (themeToggle) themeToggle.textContent = t === 'dark' ? '☀️' : '🌙';
+        }
+        function getInitialTheme() {
+            var s = safeGet('theme');
+            if (s === 'dark' || s === 'light') return s;
+            try { return matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'; }
+            catch(e){ return 'light'; }
+        }
+        applyTheme(getInitialTheme());
+        if (themeToggle) {
+            themeToggle.addEventListener('click', function () {
+                var next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+                applyTheme(next);
+                safeSet('theme', next);
+            });
+        }
+
+        // ========== 小人逻辑 ==========
+        var passwordEl = document.getElementById('password');
+        var usernameEl = document.getElementById('username');
+
+        // 输入密码时，小人们转头不看
+        passwordEl.addEventListener('focus', function () {
+            document.body.classList.add('look-left');
+        });
+        passwordEl.addEventListener('blur', function () {
+            document.body.classList.remove('look-left');
+        });
+        passwordEl.addEventListener('input', function () {
+            document.body.classList.add('look-left');
+        });
+        usernameEl.addEventListener('focus', function () {
+            document.body.classList.remove('look-left');
+        });
+
+        // 独立眨眼 + 张嘴
+        function blinkWatcher(watcher) {
+            var eyes = watcher.querySelectorAll('.eye');
+            var mouth = watcher.querySelector('.mouth');
+            if (!eyes.length) return;
+
+            eyes.forEach(function (el) { el.classList.add('blink'); });
+            if (mouth) mouth.classList.add('open');
+
+            setTimeout(function () {
+                eyes.forEach(function (el) { el.classList.remove('blink'); });
+            }, 120);
+
+            setTimeout(function () {
+                if (mouth) mouth.classList.remove('open');
+            }, 260);
+        }
+
+        function scheduleBlink(watcher) {
+            var delay = 2000 + Math.random() * 4000;
+            setTimeout(function () {
+                blinkWatcher(watcher);
+                scheduleBlink(watcher);
+            }, delay);
+        }
+
+        document.querySelectorAll('.watcher').forEach(function (w) {
+            setTimeout(function () { scheduleBlink(w); }, Math.random() * 1500);
+        });
+
+        // ========== 登录 ==========
+        var SUPABASE_URL = 'https://htufjnhmowvfocwukrft.supabase.co';
+        var FUNCTION_URL = SUPABASE_URL + '/functions/v1/login';
+        var SUPABASE_ANON_KEY = 'sb_publishable_X5i03Y12PA5L71QARR9TIw_6FOlJpVr';
+        var HOME_URL = 'https://pillager-outpost.github.io/2901space/home.html';
+
+        var realnameEl = document.getElementById('realname');
+        var loginBtn = document.getElementById('loginBtn');
+        var msg = document.getElementById('msg');
+
+        function showMsg(text, type) {
+            msg.textContent = text;
+            msg.className = 'msg ' + (type || '');
+        }
+
+        loginBtn.addEventListener('click', async function () {
+            var username = usernameEl.value.trim();
+            var realname = realnameEl.value.trim();
+            var password = passwordEl.value;
+
+            if (!username) { showMsg('请输入用户名', 'error'); return; }
+            if (!realname) { showMsg('请输入真实姓名', 'error'); return; }
+            if (!password) { showMsg('请输入密码', 'error'); return; }
+
+            var combined = username + '_0' + realname + '0_';
+
+            loginBtn.disabled = true;
+            showMsg('登录中…', '');
+
+            try {
+                var res = await fetch(FUNCTION_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'apikey': SUPABASE_ANON_KEY,
+                        'Authorization': 'Bearer ' + SUPABASE_ANON_KEY
+                    },
+                    body: JSON.stringify({
+                        username: combined,
+                        password: password
+                    })
+                });
+
+                var data = await res.json().catch(function () { return {}; });
+
+                if (res.ok && data.ok) {
+                    safeSet('token', data.token);
+                    safeSet('username', combined);
+                    safeSet('displayName', realname);
+
+                    showMsg('登录成功！正在跳转…', 'ok');
+                    setTimeout(function () {
+                        window.location.href = HOME_URL;
+                    }, 1200);
+                } else {
+                    showMsg(data.msg || ('登录失败：' + res.status), 'error');
+                }
+            } catch (e) {
+                console.error(e);
+                showMsg('网络错误，请稍后重试', 'error');
+            } finally {
+                loginBtn.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html>
