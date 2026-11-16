@@ -453,22 +453,25 @@
 
         var menuContainer = document.getElementById('menuContainer');
 
+        // 所有菜单及链接
         var MENUS = {
-            '错题统计': { icon: '📚', text: '生物错题统计', href: '#' },
-            '错题结果': { icon: '📊', text: '生物错题统计结果', href: '#' },
-            '发布错题': { icon: '📝', text: '发布生物错题统计', href: '#' },
-            '通知板': { icon: '📢', text: '通知板', href: '#' },
-            '图库': { icon: '🖼️', text: '2901 图库', href: '#' },
-            '自由发挥': { icon: '🎨', text: '自由发挥区一览', href: '#' },
+            '错题统计': { icon: '📚', text: '生物错题统计', href: 'https://pillager-outpost.github.io/2901space/survey.html' },
+            '错题结果': { icon: '📊', text: '生物错题统计结果', href: 'https://pillager-outpost.github.io/2901space/results.html' },
+            '发布错题': { icon: '📝', text: '发布生物错题统计', href: 'https://pillager-outpost.github.io/2901space/new_survey.html' },
+            '通知板': { icon: '📢', text: '通知板', href: 'https://pillager-outpost.github.io/2901space/notice.html' },
+            '图库': { icon: '🖼️', text: '2901 图库', href: 'https://pillager-outpost.github.io/2901space/photo.html' },
+            '自由发挥': { icon: '🎨', text: '自由发挥区一览', href: 'https://pillager-outpost.github.io/2901space/view.html' },
             '审核用户': { icon: '🛡️', text: '审核用户', href: 'https://pillager-outpost.github.io/2901space/review.html' },
+            '用户管理': { icon: '👥', text: '用户管理', href: 'https://pillager-outpost.github.io/2901space/users.html' },
             '彩蛋收集站': { icon: '🥚', text: '彩蛋收集站', href: 'https://pillager-outpost.github.io/2901space/eggs.html' }
         };
 
+        // 角色对应的权限节点
         var PERMISSIONS = {
             'guest': ['图库'], 
             'student': ['错题统计', '图库', '通知板', '自由发挥'],
             'teacher': ['错题结果', '通知板', '图库'],
-            'admin': ['发布错题', '通知板', '图库', '错题统计', '错题结果', '自由发挥', '审核用户']
+            'admin': ['发布错题', '通知板', '图库', '错题统计', '错题结果', '自由发挥', '审核用户', '用户管理']
         };
 
         function renderMenus(level) {
