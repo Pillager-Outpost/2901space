@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>注册 · 2901 Space</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏝️</text></svg>">
+<style>
+    :root {
+        --bg1: #E0F2FE;
+        --bg2: #F0FDF4;
+        --card: rgba(255, 255, 255, 0.9);
+        --text: #1E293B;
+        --text-muted: #64748B;
+        --border: rgba(203, 213, 225, 0.6);
+        --accent: #0EA5E9;
+        --input-bg: #fff;
+        --btn-bg: #0EA5E9;
+        --btn-text: #fff;
+        --error: #DC2626;
+        --ok: #16A34A;
+        --shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+        --shape1: #F59E0B;
+        --shape2: #0EA5E9;
+        --shape3: #10B981;
+        --eye-white: #fff;
+        --eye-pupil: #1E293B;
+        --mouth: #1E293B;
+    }
+    html[data-theme="dark"] {
+        --bg1: #0B1120;
+        --bg2: #111827;
+        --card: rgba(30, 41, 59, 0.9);
+        --text: #E2E8F0;
+        --text-muted: #94A3B8;
+        --border: rgba(51, 65, 85, 0.8);
+        --accent: #38BDF8;
+        --input-bg: #1C2228;
+        --btn-bg: #38BDF8;
+        --btn-text: #0B1120;
+        --error: #F87171;
+        --ok: #4ADE80;
+        --shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+        --shape1: #FBBF24;
+        --shape2: #38BDF8;
+        --shape3: #34D399;
+        --eye-white: #E2E8F0;
+        --eye-pupil: #0B1120;
+        --mouth: #E2E8F0;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+        background: linear-gradient(160deg, var(--bg1), var(--bg2));
+        background-attachment: fixed;
+        color: var(--text);
+        font-family: "华文中宋", "STZhongsong", "SimSun", serif;
+        line-height: 1.8;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+        transition: background 0.4s, color 0.3s;
+    }
+
+    .card {
+        background: var(--card);
+        backdrop-filter: blur(12px);
+        border: 1px solid var(--border);
+        border-radius: 22px;
+        padding: 32px;
+        max-width: 860px;
+        width: 100%;
+        box-shadow: var(--shadow);
+        animation: fadeUp 0.5s ease both;
+        display: grid;
+        grid-template-columns: 240px 1fr;
+        gap: 36px;
+        align-items: center;
+    }
+
+    @keyframes fadeUp {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ========== 左侧小人 ========== */
+    .stage {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 22px;
+        min-height: 360px;
+        position: relative;
+    }
+
+    .watchers {
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
+        align-items: center;
+    }
+
+    .watcher {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        transform-origin: center bottom;
+        transform: rotate(20deg) translateX(0);
+        transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    body.look-left .watcher:nth-child(1) {
+        transform: rotate(-20deg) translateX(-22px);
+        transition-delay: 0s;
+    }
+    body.look-left .watcher:nth-child(2) {
+        transform: rotate(-20deg) translateX(-16px);
+        transition-delay: 0.05s;
+    }
+    body.look-left .watcher:nth-child(3) {
+        transform: rotate(-20deg) translateX(-10px);
+        transition-delay: 0.1s;
+    }
+
+    .body-shape {
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .shape-sector {
+        width: 64px;
+        height: 64px;
+        background: conic-gradient(from 210deg, var(--shape1) 0deg 120deg, transparent 120deg);
+        border-radius: 6px;
+    }
+
+    .shape-rect {
+        width: 56px;
+        height: 68px;
+        background: var(--shape2);
+        border-radius: 6px;
+    }
+
+    .shape-triangle {
+        width: 72px;
+        height: 68px;
+        background: var(--shape3);
+        clip-path: polygon(50% 0%, 100% 100%, 0% 100%);
+        border-radius: 0;
+    }
+
+    /* ========== 眼睛 ========== */
+    .eyes {
+        position: absolute;
+        display: flex;
+        gap: 6px;
+        transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .eye {
+        width: 12px;
+        height: 12px;
+        background: var(--eye-white);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.08);
+        overflow: hidden;
+        transition: height 0.12s ease;
+    }
+
+    .eye.blink {
+        height: 1px;
+    }
+
+    .eye::after {
+        content: "";
+        width: 6px;
+        height: 6px;
+        background: var(--eye-pupil);
+        border-radius: 50%;
+        transform: translateX(1.5px);
+        transition: transform 0.35s;
+    }
+
+    body.look-left .eye::after {
+        transform: translateX(-1.5px);
+    }
+
+    .shape-sector .eyes { top: 24px; }
+    .shape-rect .eyes { top: 20px; }
+    .shape-triangle .eyes { top: 30px; }
+
+    body.look-left .eyes {
+        transform: translateX(-3px);
+    }
+
+    /* ========== 嘴 ========== */
+    .mouth {
+        position: absolute;
+        width: 10px;
+        height: 4px;
+        background: var(--mouth);
+        border-radius: 0 0 10px 10px;
+        transition: height 0.15s ease, border-radius 0.15s ease;
+    }
+
+    /* 张嘴（眨眼时） */
+    .mouth.open {
+        height: 7px;
+        border-radius: 0 0 12px 12px;
+    }
+
+    .shape-sector .mouth { top: 40px; }
+    .shape-rect .mouth { top: 42px; }
+    .shape-triangle .mouth { top: 48px; }
+
+    .watcher::after {
+        content: "";
+        display: block;
+        width: 36px;
+        height: 5px;
+        border-radius: 50%;
+        background: rgba(0, 0, 0, 0.1);
+        margin-top: 6px;
+        transition: background 0.3s;
+    }
+    html[data-theme="dark"] .watcher::after {
+        background: rgba(255, 255, 255, 0.1);
+    }
+
+    /* ========== 右侧表单 ========== */
+    .form-area { min-width: 0; }
+
+    .title { font-size: 1.8em; font-weight: normal; margin-bottom: 6px; }
+    .subtitle { font-size: 0.95em; color: var(--text-muted); margin-bottom: 24px; }
+
+    label { display: block; font-size: 0.9em; color: var(--text-muted); margin-bottom: 6px; }
+
+    input[type="text"],
+    input[type="password"] {
+        width: 100%;
+        padding: 12px 14px;
+        font-size: 1em;
+        font-family: inherit;
+        color: var(--text);
+        background: var(--input-bg);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        outline: none;
+        transition: border-color 0.2s;
+        margin-bottom: 16px;
+    }
+    input:focus { border-color: var(--accent); }
+
+    .captcha {
+        background: rgba(255, 255, 255, 0.5);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 14px 16px;
+        margin-bottom: 20px;
+    }
+    html[data-theme="dark"] .captcha { background: rgba(255, 255, 255, 0.06); }
+
+    .captcha-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+        justify-content: space-between;
+    }
+
+    .captcha-question {
+        font-size: 1.05em;
+        font-family: "Consolas", "Courier New", monospace;
+        letter-spacing: 0.05em;
+        user-select: none;
+    }
+
+    .captcha input[type="text"] {
+        width: 80px;
+        margin-bottom: 0;
+        padding: 6px 10px;
+        text-align: center;
+    }
+
+    .captcha-refresh {
+        background: transparent;
+        border: none;
+        color: var(--accent);
+        font-size: 0.9em;
+        cursor: pointer;
+        font-family: inherit;
+        text-decoration: underline;
+        white-space: nowrap;
+    }
+    .captcha-refresh:hover { opacity: 0.8; }
+
+    .captcha-hint {
+        font-size: 0.8em;
+        color: var(--text-muted);
+        margin-top: 8px;
+    }
+
+    .btn {
+        width: 100%;
+        padding: 13px 16px;
+        font-size: 1.05em;
+        font-family: inherit;
+        color: var(--btn-text);
+        background: var(--btn-bg);
+        border: none;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: transform 0.15s, box-shadow 0.2s, opacity 0.2s;
+        box-shadow: 0 4px 14px rgba(14, 165, 233, 0.25);
+    }
+    .btn:hover { transform: translateY(-2px); }
+    .btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+    .msg { margin-top: 16px; font-size: 0.95em; text-align: center; min-height: 1.6em; line-height: 1.7; }
+    .msg.error { color: var(--error); }
+    .msg.ok { color: var(--ok); }
+    .msg a { color: var(--accent); text-decoration: underline; }
+
+    .back {
+        display: block;
+        text-align: center;
+        margin-top: 22px;
+        font-size: 0.9em;
+        color: var(--text-muted);
+        text-decoration: none;
+        border-bottom: 1px dashed var(--text-muted);
+        width: fit-content;
+        margin-left: auto;
+        margin-right: auto;
+    }
+    .back:hover { color: var(--accent); border-bottom-color: var(--accent); }
+
+    #themeToggle {
+        position: fixed;
+        top: 20px; right: 20px;
+        width: 44px; height: 44px;
+        border-radius: 50%;
+        border: 1px solid var(--border);
+        background: var(--card);
+        color: var(--text);
+        font-size: 1.2em;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: var(--shadow);
+        transition: transform 0.2s;
+        z-index: 999;
+    }
+    #themeToggle:hover { transform: scale(1.08); }
+
+    @media (max-width: 760px) {
+        .card {
+            grid-template-columns: 1fr;
+            gap: 20px;
+            padding: 24px 18px;
+        }
+        .stage { min-height: auto; }
+        .watchers { flex-direction: row; gap: 20px; }
+        body.look-left .watcher:nth-child(1) { transform: rotate(-20deg) translateX(-14px); }
+        body.look-left .watcher:nth-child(2) { transform: rotate(-20deg) translateX(-10px); }
+        body.look-left .watcher:nth-child(3) { transform: rotate(-20deg) translateX(-6px); }
+        .title { font-size: 1.5em; }
+        .captcha-row { flex-direction: column; align-items: flex-start; }
+        .captcha input[type="text"] { width: 100%; }
+        #themeToggle { top: 14px; right: 14px; width: 38px; height: 38px; font-size: 1em; }
+    }
+</style>
+</head>
+<body>
+
+    <button id="themeToggle" title="切换深色/浅色模式">🌙</button>
+
+    <div class="card">
+
+        <div class="stage">
+            <div class="watchers">
+                <div class="watcher" data-id="1">
+                    <div class="body-shape shape-sector">
+                        <div class="eyes">
+                            <span class="eye"></span>
+                            <span class="eye"></span>
+                        </div>
+                        <div class="mouth"></div>
+                    </div>
+                </div>
+                <div class="watcher" data-id="2">
+                    <div class="body-shape shape-rect">
+                        <div class="eyes">
+                            <span class="eye"></span>
+                            <span class="eye"></span>
+                        </div>
+                        <div class="mouth"></div>
+                    </div>
+                </div>
+                <div class="watcher" data-id="3">
+                    <div class="body-shape shape-triangle">
+                        <div class="eyes">
+                            <span class="eye"></span>
+                            <span class="eye"></span>
+                        </div>
+                        <div class="mouth"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-area">
+            <h1 class="title">注册</h1>
+            <p class="subtitle">创建你的 2901 Space 账号</p>
+
+            <label for="username">用户名</label>
+            <input type="text" id="username" placeholder="2~32 位，字母/数字/下划线/中文" autocomplete="off">
+
+            <label for="realname">真实姓名</label>
+            <input type="text" id="realname" placeholder="请输入真实姓名" autocomplete="off">
+
+            <label for="password">密码</label>
+            <input type="password" id="password" placeholder="至少 6 位" autocomplete="new-password">
+
+            <div class="captcha">
+                <div class="captcha-row">
+                    <span class="captcha-question" id="captchaQuestion">加载中…</span>
+                    <input type="text" id="captchaAnswer" placeholder="答案" inputmode="numeric" autocomplete="off">
+                    <button class="captcha-refresh" id="captchaRefresh" type="button">换一题</button>
+                </div>
+                <p class="captcha-hint">请计算上方算式，填入结果</p>
+            </div>
+
+            <button class="btn" id="submitBtn" type="button">注册</button>
+
+            <p class="msg" id="msg"></p>
+
+            <a class="back" href="https://pillager-outpost.github.io/2901space/">← 返回首页</a>
+        </div>
+    </div>
+
+    <script>
+        // 主题
+        function safeGet(k){ try { return localStorage.getItem(k); } catch(e){ return null; } }
+        function safeSet(k,v){ try { localStorage.setItem(k,v); } catch(e){} }
+
+        var themeToggle = document.getElementById('themeToggle');
+        var root = document.documentElement;
+        function applyTheme(t) {
+            root.setAttribute('data-theme', t);
+            if (themeToggle) themeToggle.textContent = t === 'dark' ? '☀️' : '🌙';
+        }
+        function getInitialTheme() {
+            var s = safeGet('theme');
+            if (s === 'dark' || s === 'light') return s;
+            try { return matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'; }
+            catch(e){ return 'light'; }
+        }
+        applyTheme(getInitialTheme());
+        if (themeToggle) {
+            themeToggle.addEventListener('click', function () {
+                var next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+                applyTheme(next);
+                safeSet('theme', next);
+            });
+        }
+
+        // 小人看向密码框
+        var passwordEl = document.getElementById('password');
+        var usernameEl = document.getElementById('username');
+
+        passwordEl.addEventListener('focus', function () {
+            document.body.classList.add('look-left');
+        });
+        passwordEl.addEventListener('blur', function () {
+            document.body.classList.remove('look-left');
+        });
+        passwordEl.addEventListener('input', function () {
+            document.body.classList.add('look-left');
+        });
+        usernameEl.addEventListener('focus', function () {
+            document.body.classList.remove('look-left');
+        });
+
+        // ========== 独立眨眼 + 张嘴 ==========
+        function blinkWatcher(watcher) {
+            var eyes = watcher.querySelectorAll('.eye');
+            var mouth = watcher.querySelector('.mouth');
+            if (!eyes.length) return;
+
+            eyes.forEach(function (el) { el.classList.add('blink'); });
+            if (mouth) mouth.classList.add('open');
+
+            setTimeout(function () {
+                eyes.forEach(function (el) { el.classList.remove('blink'); });
+            }, 120);
+
+            // 嘴比眼睛晚一点合上，像“打了个哈欠”
+            setTimeout(function () {
+                if (mouth) mouth.classList.remove('open');
+            }, 260);
+        }
+
+        function scheduleBlink(watcher) {
+            // 每只独立：2~6 秒随机
+            var delay = 2000 + Math.random() * 4000;
+            setTimeout(function () {
+                blinkWatcher(watcher);
+                scheduleBlink(watcher);
+            }, delay);
+        }
+
+        document.querySelectorAll('.watcher').forEach(function (w) {
+            // 首次错开，避免同时开始
+            setTimeout(function () { scheduleBlink(w); }, Math.random() * 1500);
+        });
+
+        // 人机验证
+        var captchaQuestion = document.getElementById('captchaQuestion');
+        var captchaAnswer = document.getElementById('captchaAnswer');
+        var captchaRefresh = document.getElementById('captchaRefresh');
+        var captchaText = '';
+        var captchaToken = '';
+        var captchaStart = 0;
+
+        function randInt(min, max) {
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+        function randToken(len) {
+            var chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+            var s = '';
+            for (var i = 0; i < len; i++) s += chars[randInt(0, chars.length - 1)];
+            return s;
+        }
+
+        function newCaptcha() {
+            var type = randInt(1, 3);
+            var a, b, op, result;
+            if (type === 1) {
+                a = randInt(10, 49); b = randInt(1, 49); op = '+'; result = a + b;
+            } else if (type === 2) {
+                a = randInt(20, 99); b = randInt(1, a - 1); op = '−'; result = a - b;
+            } else {
+                a = randInt(2, 9); b = randInt(2, 9); op = '×'; result = a * b;
+            }
+            captchaText = String(result);
+            captchaToken = randToken(8);
+            captchaStart = Date.now();
+            captchaQuestion.textContent = a + ' ' + op + ' ' + b + ' = ?';
+            captchaAnswer.value = '';
+            captchaAnswer.focus();
+        }
+        newCaptcha();
+        captchaRefresh.addEventListener('click', newCaptcha);
+
+        // 注册
+        var SUPABASE_URL = 'https://htufjnhmowvfocwukrft.supabase.co';
+        var FUNCTION_URL = SUPABASE_URL + '/functions/v1/register';
+        var SUPABASE_ANON_KEY = 'sb_publishable_X5i03Y12PA5L71QARR9TIw_6FOlJpVr';
+        var FEEDBACK_URL = 'https://pillager-outpost.github.io/2901space/review_feedback.html';
+
+        var realnameEl = document.getElementById('realname');
+        var submitBtn = document.getElementById('submitBtn');
+        var msg = document.getElementById('msg');
+
+        function showMsg(text, type) {
+            msg.textContent = text;
+            msg.className = 'msg ' + (type || '');
+        }
+
+        submitBtn.addEventListener('click', async function () {
+            var username = usernameEl.value.trim();
+            var realname = realnameEl.value.trim();
+            var password = passwordEl.value;
+            var answer = captchaAnswer.value.trim();
+
+            if (!username) { showMsg('请输入用户名', 'error'); return; }
+            if (username.length < 2 || username.length > 32) {
+                showMsg('用户名长度需在 2~32 位之间', 'error'); return;
+            }
+            if (!/^[a-zA-Z0-9_\u4e00-\u9fa5]+$/.test(username)) {
+                showMsg('用户名只能包含字母、数字、下划线或中文', 'error'); return;
+            }
+            if (!realname) { showMsg('请输入真实姓名', 'error'); return; }
+            if (realname.length > 32) { showMsg('真实姓名不能超过 32 位', 'error'); return; }
+            if (!password) { showMsg('请输入密码', 'error'); return; }
+            if (password.length < 6) { showMsg('密码至少 6 位', 'error'); return; }
+
+            if (answer === '') { showMsg('请填写人机验证答案', 'error'); return; }
+            if (answer !== captchaText) {
+                showMsg('人机验证失败，请重新计算', 'error');
+                newCaptcha();
+                return;
+            }
+            if (Date.now() - captchaStart < 1500) {
+                showMsg('提交太快了，请稍等再试', 'error');
+                return;
+            }
+
+            var combinedUsername = username + '_0' + realname + '0_';
+
+            submitBtn.disabled = true;
+            showMsg('提交中…', '');
+
+            try {
+                var res = await fetch(FUNCTION_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'apikey': SUPABASE_ANON_KEY,
+                        'Authorization': 'Bearer ' + SUPABASE_ANON_KEY
+                    },
+                    body: JSON.stringify({
+                        username: combinedUsername,
+                        password: password,
+                        captcha: answer,
+                        captchaExpected: captchaText,
+                        captchaToken: captchaToken
+                    })
+                });
+
+                var data = await res.json().catch(function () { return {}; });
+
+                if (res.ok && data.ok) {
+                    msg.className = 'msg ok';
+                    msg.innerHTML = '申请已提交，请等待审核。<br>审核结果见 <a href="' + FEEDBACK_URL + '">review_feedback.html</a>';
+
+                    usernameEl.value = '';
+                    realnameEl.value = '';
+                    passwordEl.value = '';
+                    newCaptcha();
+
+                    setTimeout(function () {
+                        window.location.href = FEEDBACK_URL;
+                    }, 2500);
+                } else {
+                    showMsg(data.error || ('提交失败：' + res.status), 'error');
+                }
+            } catch (e) {
+                console.error(e);
+                showMsg('网络错误，请稍后重试', 'error');
+            } finally {
+                submitBtn.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html>
