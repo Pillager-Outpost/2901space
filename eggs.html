@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>彩蛋集换所 · 2901 Space</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🥚</text></svg>">
+<style>
+    :root {
+        --bg1: #E0F2FE;
+        --bg2: #F0FDF4;
+        --card: rgba(255, 255, 255, 0.9);
+        --text: #1E293B;
+        --text-muted: #64748B;
+        --border: rgba(203, 213, 225, 0.6);
+        --accent: #0EA5E9;
+        --btn-bg: #0EA5E9;
+        --btn-text: #fff;
+        --shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+        --input-bg: #fff;
+        --ring-bg: rgba(203, 213, 225, 0.4);
+        --egg-locked-bg: rgba(148, 163, 184, 0.1);
+        --egg-locked-text: #94A3B8;
+        --egg-unlocked-bg: linear-gradient(135deg, rgba(253, 224, 71, 0.2) 0%, rgba(245, 158, 11, 0.2) 100%);
+        --t-color: 0.3s ease-out;
+    }
+    html[data-theme="dark"] {
+        --bg1: #0B1120;
+        --bg2: #111827;
+        --card: rgba(30, 41, 59, 0.9);
+        --text: #E2E8F0;
+        --text-muted: #94A3B8;
+        --border: rgba(51, 65, 85, 0.8);
+        --accent: #38BDF8;
+        --btn-bg: #38BDF8;
+        --btn-text: #0B1120;
+        --shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+        --input-bg: #1C2228;
+        --ring-bg: rgba(51, 65, 85, 0.6);
+        --egg-locked-bg: rgba(255, 255, 255, 0.05);
+        --egg-locked-text: #475569;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+        background: linear-gradient(160deg, var(--bg1), var(--bg2));
+        background-attachment: fixed;
+        color: var(--text);
+        font-family: "华文中宋", "STZhongsong", "SimSun", serif;
+        line-height: 1.8;
+        min-height: 100vh;
+        padding: 40px 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        transition: background var(--t-color), color var(--t-color);
+        overflow-x: hidden;
+    }
+
+    .container {
+        max-width: 600px;
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 30px;
+        animation: fadeUp 0.5s ease both;
+    }
+
+    @keyframes fadeUp {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .title { font-size: 2em; font-weight: normal; text-align: center; margin-bottom: -10px; }
+    .subtitle { font-size: 0.95em; color: var(--text-muted); text-align: center; }
+
+    /* ========== 自定义弹窗 ========== */
+    .modal-overlay {
+        position: fixed; inset: 0;
+        background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(4px);
+        display: none; align-items: center; justify-content: center;
+        z-index: 10000; opacity: 0; transition: opacity 0.3s ease; padding: 24px;
+    }
+    .modal-overlay.show { display: flex; opacity: 1; }
+    
+    .modal-box {
+        background: var(--card);
+        border: 1px solid var(--border); border-radius: 18px;
+        padding: 32px 28px; width: 100%; max-width: 360px;
+        text-align: center; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        animation: popIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    @keyframes popIn {
+        from { transform: scale(0.8); opacity: 0; }
+        to { transform: scale(1); opacity: 1; }
+    }
+    
+    .modal-emoji { font-size: 3em; margin-bottom: 12px; display: block; }
+    .modal-title { font-size: 1.4em; font-weight: normal; margin-bottom: 10px; color: var(--accent); }
+    .modal-desc { font-size: 0.95em; color: var(--text-muted); margin-bottom: 24px; line-height: 1.6; }
+    
+    .modal-btn {
+        padding: 10px 24px; font-size: 1em; font-family: inherit;
+        color: var(--btn-text); background: var(--btn-bg); border: none;
+        border-radius: 10px; cursor: pointer; width: 100%;
+        transition: transform 0.15s;
+    }
+    .modal-btn:hover { transform: translateY(-2px); }
+
+    /* ========== 可拖拽的主题悬浮按钮 ========== */
+    .draggable-theme-btn {
+        position: fixed;
+        top: 20px; right: 20px;
+        width: 44px; height: 44px;
+        border-radius: 50%;
+        border: 1px solid var(--border);
+        background: var(--card);
+        color: var(--text);
+        font-size: 1.2em;
+        cursor: grab;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: var(--shadow);
+        z-index: 9999;
+        user-select: none;
+        touch-action: none;
+        transition: transform 0.1s, box-shadow 0.2s, opacity 0.2s;
+    }
+    .draggable-theme-btn:active { cursor: grabbing; transform: scale(1.1); }
+    .draggable-theme-btn.dragging { opacity: 0.8; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
+
+    /* ========== 环形图鉴 ========== */
+    .ring-container {
+        position: relative;
+        width: 320px;
+        height: 320px;
+        margin: 20px 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .ring-center {
+        position: absolute;
+        font-size: 1em;
+        color: var(--text-muted);
+        text-align: center;
+        font-weight: bold;
+        letter-spacing: 0.1em;
+        pointer-events: none;
+        z-index: 1;
+    }
+
+    .ring-container::before {
+        content: '';
+        position: absolute;
+        inset: 30px;
+        border-radius: 50%;
+        border: 2px dashed var(--ring-bg);
+        z-index: 0;
+    }
+
+    .egg-node {
+        position: absolute;
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        background: var(--egg-locked-bg);
+        color: var(--egg-locked-text);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.6em;
+        border: 2px solid transparent;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        z-index: 2;
+    }
+
+    .egg-node.drag-over {
+        transform: scale(1.3) !important;
+        border-color: var(--accent) !important;
+        background: rgba(14, 165, 233, 0.3) !important;
+        box-shadow: 0 0 25px rgba(14, 165, 233, 0.8) !important;
+        z-index: 10;
+    }
+
+    .egg-icon {
+        display: inline-block;
+        animation: slowSpin 12s linear infinite;
+    }
+    @keyframes slowSpin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    .egg-node.unlocked {
+        background: var(--egg-unlocked-bg);
+        color: var(--text);
+        border-color: var(--accent);
+        box-shadow: 0 0 15px rgba(14, 165, 233, 0.4);
+        transform: scale(1.1);
+    }
+    
+    @keyframes pop {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.4); }
+        100% { transform: scale(1.1); }
+    }
+    .egg-node.animate { animation: pop 0.4s ease; }
+
+    .embedded-theme-btn {
+        width: 100%; height: 100%;
+        border-radius: 50%; border: none;
+        background: transparent; color: inherit;
+        font-size: 1.2em; cursor: pointer;
+        display: flex; align-items: center; justify-content: center;
+        transition: transform 0.2s;
+    }
+    .embedded-theme-btn:hover { transform: scale(1.15); }
+
+    /* ========== 输入区 ========== */
+    .input-card {
+        background: var(--card);
+        backdrop-filter: blur(12px);
+        border: 1px solid var(--border);
+        border-radius: 18px;
+        padding: 24px;
+        width: 100%;
+        max-width: 420px;
+        box-shadow: var(--shadow);
+        text-align: center;
+    }
+
+    .input-card h3 { font-size: 1.1em; font-weight: normal; margin-bottom: 16px; color: var(--text-muted); }
+    .code-input-group { display: flex; gap: 10px; }
+
+    input[type="text"] {
+        flex: 1; padding: 12px 16px;
+        font-size: 1em; font-family: "Consolas", "Courier New", monospace;
+        color: var(--text); background: var(--input-bg);
+        border: 1px solid var(--border); border-radius: 10px;
+        outline: none; transition: border-color 0.2s; letter-spacing: 0.05em;
+    }
+    input:focus { border-color: var(--accent); }
+
+    .btn {
+        padding: 12px 24px; font-size: 1em; font-family: inherit;
+        color: var(--btn-text); background: var(--btn-bg);
+        border: none; border-radius: 10px; cursor: pointer;
+        transition: transform 0.15s, box-shadow 0.2s;
+        box-shadow: 0 4px 14px rgba(14, 165, 233, 0.25);
+        white-space: nowrap;
+    }
+    .btn:hover { transform: translateY(-2px); box-shadow: 0 8px 22px rgba(14, 165, 233, 0.35); }
+
+    .msg { margin-top: 12px; font-size: 0.9em; min-height: 1.5em; }
+    .msg.error { color: #ef4444; }
+    .msg.success { color: #10b981; }
+
+    .back-link {
+        display: inline-block; margin-top: 20px;
+        color: var(--text-muted); text-decoration: none; font-size: 0.9em;
+        border-bottom: 1px dashed var(--text-muted);
+    }
+    .back-link:hover { color: var(--accent); border-bottom-color: var(--accent); }
+
+    @media (max-width: 600px) {
+        .ring-container { width: 260px; height: 260px; }
+        .egg-node { width: 46px; height: 46px; font-size: 1.3em; }
+        .input-card { padding: 16px; }
+        .code-input-group { flex-direction: column; }
+    }
+</style>
+</head>
+<body>
+
+    <!-- 自定义弹窗 -->
+    <div class="modal-overlay" id="customModal">
+        <div class="modal-box">
+            <span class="modal-emoji" id="modalEmoji">💡</span>
+            <h2 class="modal-title" id="modalTitle">彩蛋4</h2>
+            <p class="modal-desc" id="modalDesc">你居然把主题按钮拖进来了！</p>
+            <button class="modal-btn" id="closeModalBtn">收下彩蛋</button>
+        </div>
+    </div>
+
+    <!-- 拖拽的主题按钮 -->
+    <div class="draggable-theme-btn" id="themeBtn" title="按住我，拖到上方的问号上试试？">🌙</div>
+
+    <div class="container">
+        <div>
+            <h1 class="title">🥚 彩蛋集换所</h1>
+            <p class="subtitle">收集散落的彩蛋，集齐九枚，解锁终极秘密。</p>
+        </div>
+
+        <div class="ring-container" id="ringContainer">
+            <div class="ring-center">已收集<br><span id="countText">0/9</span></div>
+        </div>
+
+        <div class="input-card">
+            <h3>输入兑换码</h3>
+            <div class="code-input-group">
+                <input type="text" id="codeInput" placeholder="例如：crackawatheqwqcode2901" autocomplete="off">
+                <button class="btn" id="submitBtn">点亮</button>
+            </div>
+            <p class="msg" id="msg"></p>
+        </div>
+
+        <a class="back-link" href="https://pillager-outpost.github.io/2901space/home.html">← 返回用户主页</a>
+    </div>
+
+    <script>
+        function safeGet(k){ try { return localStorage.getItem(k); } catch(e){ return null; } }
+        function safeSet(k,v){ try { localStorage.setItem(k,v); } catch(e){} }
+
+        // ========== 弹窗控制 ==========
+        function showModal(title, desc, emoji) {
+            document.getElementById('modalTitle').textContent = title;
+            document.getElementById('modalDesc').textContent = desc;
+            document.getElementById('modalEmoji').textContent = emoji || '🎉';
+            document.getElementById('customModal').classList.add('show');
+        }
+        document.getElementById('closeModalBtn').addEventListener('click', function() {
+            document.getElementById('customModal').classList.remove('show');
+        });
+        document.getElementById('customModal').addEventListener('click', function(e) {
+            if (e.target === this) this.classList.remove('show');
+        });
+
+        // ========== 主题状态 ==========
+        var root = document.documentElement;
+        var themeBtn = document.getElementById('themeBtn');
+
+        function applyTheme(t) {
+            root.setAttribute('data-theme', t);
+            var icon = t === 'dark' ? '☀️' : '🌙';
+            themeBtn.textContent = icon;
+            var embeddedBtn = document.getElementById('embeddedThemeBtn');
+            if (embeddedBtn) embeddedBtn.textContent = icon;
+        }
+        function getInitialTheme() {
+            var s = safeGet('theme');
+            if (s === 'dark' || s === 'light') return s;
+            try { return matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'; }
+            catch(e){ return 'light'; }
+        }
+        applyTheme(getInitialTheme());
+
+        // ========== 配置 ==========
+        const TOTAL_EGGS = 9;
+        const CODE_MAP = {
+            'crackawatheqwqcode2901': 1,
+            'qwqeasteregg': 2,
+            'lostin404_10times': 3,
+            'eggs_are_everywhere_2901': 4
+        };
+        const EGG_ICONS = {
+            1: '🎉', 2: '🫧', 3: '🪵', 4: '💡', 5: '💎',
+            6: '🌟', 7: '🔥', 8: '🍀', 9: '👑'
+        };
+
+        let unlockedList = [];
+        try {
+            let saved = safeGet('eggs_collected');
+            if (saved) unlockedList = JSON.parse(saved);
+        } catch(e) {}
+
+        const ringContainer = document.getElementById('ringContainer');
+        const countText = document.getElementById('countText');
+
+        function getRadiusAndSize() {
+            if (window.innerWidth < 600) return { r: 95, c: 130, s: 46 };
+            return { r: 120, c: 160, s: 56 };
+        }
+
+        function renderNodes() {
+            const oldNodes = document.querySelectorAll('.egg-node');
+            oldNodes.forEach(n => n.remove());
+
+            const { r, c, s } = getRadiusAndSize();
+
+            for (let i = 1; i <= TOTAL_EGGS; i++) {
+                let angle = (i - 1) * (360 / TOTAL_EGGS) - 90; 
+                let rad = angle * (Math.PI / 180);
+                let x = c + r * Math.cos(rad);
+                let y = c + r * Math.sin(rad);
+
+                let node = document.createElement('div');
+                node.className = 'egg-node';
+                node.id = 'egg-' + i;
+                node.style.left = x + 'px';
+                node.style.top = y + 'px';
+                node.style.width = s + 'px';
+                node.style.height = s + 'px';
+                node.style.marginLeft = (-s/2) + 'px';
+                node.style.marginTop = (-s/2) + 'px';
+
+                if (unlockedList.includes(i)) {
+                    node.classList.add('unlocked');
+                    if (i === 4) {
+                        let currentTheme = root.getAttribute('data-theme');
+                        let icon = currentTheme === 'dark' ? '☀️' : '🌙';
+                        node.innerHTML = `<button class="embedded-theme-btn" id="embeddedThemeBtn" title="切换主题">${icon}</button>`;
+                        node.querySelector('button').addEventListener('click', function(e) {
+                            e.stopPropagation();
+                            let next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+                            applyTheme(next);
+                            safeSet('theme', next);
+                        });
+                    } else {
+                        node.innerHTML = `<span class="egg-icon">${EGG_ICONS[i] || '🥚'}</span>`;
+                    }
+                } else {
+                    node.textContent = '?';
+                }
+
+                ringContainer.appendChild(node);
+            }
+
+            countText.textContent = unlockedList.length + '/' + TOTAL_EGGS;
+
+            if (unlockedList.includes(4)) {
+                themeBtn.style.display = 'none';
+            } else {
+                themeBtn.style.display = 'flex';
+            }
+        }
+
+        renderNodes();
+        window.addEventListener('resize', renderNodes);
+
+        // ========== 提交兑换码 ==========
+        const codeInput = document.getElementById('codeInput');
+        const submitBtn = document.getElementById('submitBtn');
+        const msg = document.getElementById('msg');
+
+        function showMsg(text, type) {
+            msg.textContent = text;
+            msg.className = 'msg ' + (type || '');
+        }
+
+        function unlockEgg(eggNumber) {
+            if (unlockedList.includes(eggNumber)) return false;
+            unlockedList.push(eggNumber);
+            safeSet('eggs_collected', JSON.stringify(unlockedList));
+            renderNodes();
+            
+            let targetNode = document.getElementById('egg-' + eggNumber);
+            if (targetNode) {
+                targetNode.classList.add('animate');
+                setTimeout(() => targetNode.classList.remove('animate'), 500);
+            }
+
+            if (unlockedList.length === TOTAL_EGGS) {
+                setTimeout(() => showModal('集齐九枚！', '恭喜你找齐了所有彩蛋，开发者的小心思都被你看穿了！', '👑'), 800);
+            }
+            return true;
+        }
+
+        submitBtn.addEventListener('click', function() {
+            let code = codeInput.value.trim();
+            if (!code) { showMsg('请输入兑换码', 'error'); return; }
+
+            let eggNumber = CODE_MAP[code];
+            if (!eggNumber) { showMsg('无效的兑换码', 'error'); return; }
+            if (unlockedList.includes(eggNumber)) { showMsg('已经点亮过啦！', 'error'); return; }
+
+            if (unlockEgg(eggNumber)) {
+                showMsg('点亮成功！🎉', 'success');
+                codeInput.value = '';
+                if (eggNumber === 4) {
+                    setTimeout(() => showModal('彩蛋4：脑洞神人', '你发现了隐藏的主题切换彩蛋！', '💡'), 300);
+                }
+            }
+        });
+
+        codeInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') submitBtn.click();
+        });
+
+        // ========== 拖拽逻辑 ==========
+        let isDragging = false;
+        let hasMoved = false;
+        let startX, startY;
+        let initialLeft, initialTop;
+
+        themeBtn.style.position = 'fixed';
+        themeBtn.style.right = 'auto';
+        themeBtn.style.left = (window.innerWidth - 64) + 'px';
+        themeBtn.style.top = '20px';
+
+        themeBtn.addEventListener('pointerdown', function(e) {
+            if (unlockedList.includes(4)) return;
+
+            isDragging = true;
+            hasMoved = false;
+            themeBtn.classList.add('dragging');
+            themeBtn.classList.remove('was-dragging');
+
+            startX = e.clientX;
+            startY = e.clientY;
+            initialLeft = themeBtn.getBoundingClientRect().left;
+            initialTop = themeBtn.getBoundingClientRect().top;
+
+            themeBtn.setPointerCapture(e.pointerId);
+        });
+
+        themeBtn.addEventListener('pointermove', function(e) {
+            if (!isDragging) return;
+            
+            let dx = e.clientX - startX;
+            let dy = e.clientY - startY;
+            
+            if (Math.abs(dx) > 5 || Math.abs(dy) > 5) {
+                hasMoved = true;
+                themeBtn.classList.add('was-dragging');
+            }
+
+            if (hasMoved) {
+                themeBtn.style.left = (initialLeft + dx) + 'px';
+                themeBtn.style.top = (initialTop + dy) + 'px';
+                checkDragOver(e.clientX, e.clientY);
+            }
+        });
+
+        themeBtn.addEventListener('pointerup', function(e) {
+            if (!isDragging) return;
+            isDragging = false;
+            themeBtn.classList.remove('dragging');
+            themeBtn.releasePointerCapture(e.pointerId);
+
+            if (!hasMoved) {
+                let next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+                applyTheme(next);
+                safeSet('theme', next);
+                return;
+            }
+
+            const egg4Node = document.getElementById('egg-4');
+            if (egg4Node && !unlockedList.includes(4)) {
+                const rect = egg4Node.getBoundingClientRect();
+                const centerX = rect.left + rect.width / 2;
+                const centerY = rect.top + rect.height / 2;
+                const dist = Math.hypot(e.clientX - centerX, e.clientY - centerY);
+
+                if (dist < 50) {
+                    if (unlockEgg(4)) {
+                        // 使用自定义弹窗，避免被浏览器拦截
+                        setTimeout(() => showModal('彩蛋4：脑洞神人', '你居然把主题按钮拖进来了！这是一个专属于你的脑洞彩蛋。', '💡'), 200);
+                    }
+                    egg4Node.classList.remove('drag-over');
+                    return;
+                }
+            }
+
+            bounceBack();
+        });
+
+        function checkDragOver(x, y) {
+            const egg4Node = document.getElementById('egg-4');
+            if (!egg4Node || unlockedList.includes(4)) return;
+
+            const rect = egg4Node.getBoundingClientRect();
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + rect.height / 2;
+            const dist = Math.hypot(x - centerX, y - centerY);
+
+            if (dist < 60) {
+                egg4Node.classList.add('drag-over');
+            } else {
+                egg4Node.classList.remove('drag-over');
+            }
+        }
+
+        function bounceBack() {
+            const egg4Node = document.getElementById('egg-4');
+            if (egg4Node) egg4Node.classList.remove('drag-over');
+            
+            themeBtn.style.transition = 'left 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), top 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)';
+            themeBtn.style.left = (window.innerWidth - 64) + 'px';
+            themeBtn.style.top = '20px';
+            
+            setTimeout(() => {
+                themeBtn.style.transition = 'transform 0.1s, box-shadow 0.2s, opacity 0.2s';
+            }, 300);
+        }
+
+        themeBtn.addEventListener('dragstart', function(e) { e.preventDefault(); });
+
+        window.addEventListener('resize', function() {
+            if (!unlockedList.includes(4) && !isDragging) {
+                themeBtn.style.left = (window.innerWidth - 64) + 'px';
+            }
+        });
+    </script>
+</body>
+</html>
