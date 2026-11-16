@@ -52,7 +52,7 @@
         color: var(--text);
         font-family: "华文中宋", "STZhongsong", "SimSun", serif;
         line-height: 1.8;
-        padding: 100px 20px 48px;    /* 顶部留出顶栏空间 */
+        padding: 100px 20px 48px;
         min-height: 100vh;
         transition: background 0.4s, color 0.3s;
     }
@@ -553,8 +553,9 @@
     @media (max-width: 600px) {
         body { padding: 88px 14px 24px; }
         .topbar { height: 56px; padding: 0 14px; }
-        .topbar-brand { font-size: 0.95em; }
-        .topbar-btn { padding: 7px 14px; font-size: 0.85em; }
+        .topbar-brand { font-size: 0.9em; }
+        .topbar-actions { gap: 6px; }
+        .topbar-btn { padding: 6px 12px; font-size: 0.8em; }
         .card { padding: 22px 18px; }
         .hero { font-size: 1.9em; }
         .subtitle { font-size: 1.1em; }
@@ -574,6 +575,7 @@
     <div class="topbar">
         <a class="topbar-brand" href="https://pillager-outpost.github.io/2901space/">2901 Space</a>
         <div class="topbar-actions">
+            <a class="topbar-btn" href="https://pillager-outpost.github.io/2901space/review_feedback.html">审核状态</a>
             <a class="topbar-btn" href="https://pillager-outpost.github.io/2901space/login.html">登录</a>
             <a class="topbar-btn primary" href="https://pillager-outpost.github.io/2901space/signin.html">注册</a>
         </div>
