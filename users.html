@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>用户管理 · 2901 Space</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>👥</text></svg>">
+<style>
+    :root {
+        --bg1: #E0F2FE;
+        --bg2: #F0FDF4;
+        --card: rgba(255, 255, 255, 0.9);
+        --text: #1E293B;
+        --text-muted: #64748B;
+        --border: rgba(203, 213, 225, 0.6);
+        --accent: #0EA5E9;
+        --shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+        --bg-hover: #f8fafc;
+        --danger: #ef4444;
+        --success: #10b981;
+        --primary: #3b82f6;
+    }
+    html[data-theme="dark"] {
+        --bg1: #0B1120;
+        --bg2: #111827;
+        --card: rgba(30, 41, 59, 0.9);
+        --text: #E2E8F0;
+        --text-muted: #94A3B8;
+        --border: rgba(51, 65, 85, 0.8);
+        --accent: #38BDF8;
+        --shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+        --bg-hover: #1e293b;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+        background: linear-gradient(160deg, var(--bg1), var(--bg2));
+        background-attachment: fixed;
+        color: var(--text);
+        font-family: "华文中宋", "STZhongsong", "SimSun", serif;
+        line-height: 1.8;
+        min-height: 100vh;
+        padding: 24px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .container {
+        max-width: 900px;
+        width: 100%;
+        animation: fadeUp 0.5s ease both;
+    }
+
+    @keyframes fadeUp {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 24px;
+    }
+    .header h1 { font-size: 1.6em; font-weight: normal; }
+    .header a {
+        color: var(--accent);
+        text-decoration: none;
+        font-size: 0.95em;
+        display: flex; align-items: center; gap: 6px;
+    }
+    .header a:hover { text-decoration: underline; }
+
+    .card {
+        background: var(--card);
+        backdrop-filter: blur(12px);
+        border: 1px solid var(--border);
+        border-radius: 18px;
+        padding: 24px;
+        box-shadow: var(--shadow);
+        overflow-x: auto;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        text-align: left;
+    }
+    th, td {
+        padding: 14px 12px;
+        border-bottom: 1px solid var(--border);
+    }
+    th {
+        font-weight: normal;
+        color: var(--text-muted);
+        font-size: 0.9em;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+    }
+    td { font-size: 1em; }
+    tr:last-child td { border-bottom: none; }
+
+    /* 交互元素 */
+    .username-edit {
+        cursor: pointer;
+        padding: 4px 8px;
+        border-radius: 6px;
+        border: 1px dashed transparent;
+        transition: 0.2s;
+        display: inline-block;
+    }
+    .username-edit:hover {
+        background: var(--bg-hover);
+        border-color: var(--border);
+    }
+    .username-input {
+        font-family: inherit;
+        font-size: 1em;
+        background: var(--bg-hover);
+        border: 1px solid var(--accent);
+        color: var(--text);
+        padding: 4px 8px;
+        border-radius: 6px;
+        outline: none;
+        width: 100%;
+    }
+
+    .level-select {
+        background: var(--bg-hover);
+        border: 1px solid var(--border);
+        color: var(--text);
+        padding: 4px 8px;
+        border-radius: 6px;
+        font-family: inherit;
+        outline: none;
+        cursor: pointer;
+    }
+    .level-select:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .pwd-cell { font-family: monospace; letter-spacing: 2px; }
+
+    .btn-icon {
+        background: transparent;
+        border: none;
+        cursor: pointer;
+        font-size: 1.1em;
+        padding: 4px;
+        border-radius: 6px;
+        transition: 0.2s;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .btn-icon:hover { background: var(--bg-hover); transform: scale(1.1); }
+    .btn-delete { color: var(--danger); }
+    .action-cell { display: flex; gap: 8px; align-items: center; }
+
+    .loading { text-align: center; padding: 40px; color: var(--text-muted); }
+
+    #themeToggle {
+        position: fixed;
+        top: 20px; right: 20px;
+        width: 44px; height: 44px;
+        border-radius: 50%;
+        border: 1px solid var(--border);
+        background: var(--card);
+        color: var(--text);
+        font-size: 1.2em;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: var(--shadow);
+        transition: transform 0.2s;
+        z-index: 999;
+    }
+    #themeToggle:hover { transform: scale(1.08); }
+
+    @media (max-width: 600px) {
+        body { padding: 16px; }
+        .card { padding: 16px; }
+        th, td { padding: 10px 6px; font-size: 0.9em; }
+    }
+</style>
+</head>
+<body>
+
+    <button id="themeToggle" title="切换深色/浅色模式">🌙</button>
+
+    <div class="container">
+        <div class="header">
+            <h1>用户管理</h1>
+            <a href="https://pillager-outpost.github.io/2901space/home.html">← 返回首页</a>
+        </div>
+
+        <div class="card">
+            <table>
+                <thead>
+                    <tr>
+                        <th>用户名</th>
+                        <th>密码</th>
+                        <th>权限 (Level)</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    <tr><td colspan="4" class="loading">正在加载用户数据...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        function safeGet(k){ try { return localStorage.getItem(k); } catch(e){ return null; } }
+        function safeSet(k,v){ try { localStorage.setItem(k,v); } catch(e){} }
+
+        // 主题控制
+        var themeToggle = document.getElementById('themeToggle');
+        var root = document.documentElement;
+        function applyTheme(t) {
+            root.setAttribute('data-theme', t);
+            if (themeToggle) themeToggle.textContent = t === 'dark' ? '☀️' : '🌙';
+        }
+        function getInitialTheme() {
+            var s = safeGet('theme');
+            if (s === 'dark' || s === 'light') return s;
+            try { return matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'; }
+            catch(e){ return 'light'; }
+        }
+        applyTheme(getInitialTheme());
+        if (themeToggle) {
+            themeToggle.addEventListener('click', function () {
+                var next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+                applyTheme(next);
+                safeSet('theme', next);
+            });
+        }
+
+        // ========== 核心逻辑 ==========
+        var SUPABASE_URL = 'https://htufjnhmowvfocwukrft.supabase.co';
+        var FUNC_URL = SUPABASE_URL + '/functions/v1/manage_users';
+        var SUPABASE_ANON_KEY = 'sb_publishable_X5i03Y12PA5L71QARR9TIw_6FOlJpVr';
+
+        var currentUsername = safeGet('username');
+        var token = safeGet('token');
+        var tableBody = document.getElementById('tableBody');
+        var usersData = [];
+        var pwdVisible = {};
+
+        if (!currentUsername || !token) {
+            window.location.href = 'https://pillager-outpost.github.io/2901space/login.html';
+        } else {
+            initUsers();
+        }
+
+        async function apiCall(payload) {
+            var res = await fetch(FUNC_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'apikey': SUPABASE_ANON_KEY,
+                    'Authorization': 'Bearer ' + SUPABASE_ANON_KEY
+                },
+                body: JSON.stringify(payload)
+            });
+            return await res.json();
+        }
+
+        async function initUsers() {
+            try {
+                var data = await apiCall({ action: 'list', currentUser: currentUsername });
+                if (!data.ok) {
+                    alert(data.msg || '身份验证失败');
+                    window.location.href = 'https://pillager-outpost.github.io/2901space/home.html';
+                    return;
+                }
+                usersData = data.users;
+                renderTable();
+            } catch (e) {
+                console.error(e);
+                tableBody.innerHTML = `<tr><td colspan="4" class="loading" style="color:var(--danger)">加载失败，请刷新重试</td></tr>`;
+            }
+        }
+
+        function renderTable() {
+            if (!usersData || usersData.length === 0) {
+                tableBody.innerHTML = `<tr><td colspan="4" class="loading">暂无用户</td></tr>`;
+                return;
+            }
+
+            let html = '';
+            usersData.forEach(function(user, index) {
+                let displayName = user.username;
+                let realName = "";
+                let match = user.username.match(/^(.*?)_0(.*?)0_$/);
+                if (match) {
+                    displayName = match[1];
+                    realName = match[2];
+                }
+
+                let isSelf = (user.username === currentUsername);
+
+                html += `
+                    <tr>
+                        <td>
+                            <div style="font-weight:bold; margin-bottom:2px;">
+                                <span class="username-edit" onclick="editUsername(${index})" id="uname-${index}">${displayName}</span>
+                            </div>
+                            <div style="font-size:0.8em; color:var(--text-muted);">${realName}</div>
+                        </td>
+                        <td class="pwd-cell" id="pwd-${index}">••••••</td>
+                        <td>
+                            <select class="level-select" onchange="changeLevel(${index}, this.value)" ${isSelf ? 'disabled title="不能修改自己的权限"' : ''}>
+                                <option value="student" ${user.level === 'student' ? 'selected' : ''}>student</option>
+                                <option value="teacher" ${user.level === 'teacher' ? 'selected' : ''}>teacher</option>
+                                <option value="admin" ${user.level === 'admin' ? 'selected' : ''}>admin</option>
+                            </select>
+                        </td>
+                        <td>
+                            <div class="action-cell">
+                                <button class="btn-icon" onclick="togglePwd(${index})" title="显示/隐藏密码" id="btn-pwd-${index}">🔑</button>
+                                ${isSelf ? '' : `<button class="btn-icon btn-delete" onclick="deleteUser(${index})" title="删除用户">✖</button>`}
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            });
+            tableBody.innerHTML = html;
+        }
+
+        window.togglePwd = function(index) {
+            let pwdTd = document.getElementById('pwd-' + index);
+            let btn = document.getElementById('btn-pwd-' + index);
+            if (pwdVisible[index]) {
+                pwdTd.textContent = '••••••';
+                btn.textContent = '🔑';
+                pwdVisible[index] = false;
+            } else {
+                pwdTd.textContent = usersData[index].password;
+                btn.textContent = '🔓';
+                pwdVisible[index] = true;
+            }
+        };
+
+        window.deleteUser = async function(index) {
+            let user = usersData[index];
+            if (!confirm('确定要永久删除用户 ' + user.username + ' 吗？')) return;
+
+            try {
+                var data = await apiCall({
+                    action: 'delete',
+                    currentUser: currentUsername,
+                    targetUser: user.username
+                });
+                if (data.ok) {
+                    usersData.splice(index, 1);
+                    renderTable();
+                } else {
+                    alert(data.msg || '删除失败');
+                }
+            } catch (e) {
+                console.error(e);
+                alert('网络错误');
+            }
+        };
+
+        window.changeLevel = async function(index, newLevel) {
+            let user = usersData[index];
+            try {
+                var data = await apiCall({
+                    action: 'update_level',
+                    currentUser: currentUsername,
+                    targetUser: user.username,
+                    newLevel: newLevel
+                });
+                if (data.ok) {
+                    usersData[index].level = newLevel;
+                } else {
+                    alert(data.msg || '修改失败');
+                    renderTable(); // 失败时恢复原状
+                }
+            } catch (e) {
+                console.error(e);
+                alert('网络错误');
+                renderTable();
+            }
+        };
+
+        window.editUsername = function(index) {
+            let user = usersData[index];
+            if (user.username === currentUsername) {
+                alert('不能修改自己的用户名');
+                return;
+            }
+
+            let span = document.getElementById('uname-' + index);
+            let oldDisplayName = span.textContent;
+            
+            let input = document.createElement('input');
+            input.type = 'text';
+            input.className = 'username-input';
+            input.value = oldDisplayName;
+            
+            span.replaceWith(input);
+            input.focus();
+
+            async function save() {
+                let newDisplayName = input.value.trim();
+                if (!newDisplayName || newDisplayName === oldDisplayName) {
+                    renderTable(); // 没改或者为空，直接恢复
+                    return;
+                }
+
+                // 拼接新的 username
+                let match = user.username.match(/^.*?_0(.*?)0_$/);
+                let newUsername = newDisplayName;
+                if (match) {
+                    newUsername = newDisplayName + '_0' + match[1] + '0_';
+                }
+
+                try {
+                    var data = await apiCall({
+                        action: 'update_username',
+                        currentUser: currentUsername,
+                        targetUser: user.username,
+                        newUsername: newUsername
+                    });
+                    if (data.ok) {
+                        usersData[index].username = newUsername;
+                        renderTable();
+                    } else {
+                        alert(data.msg || '修改失败');
+                        renderTable();
+                    }
+                } catch (e) {
+                    console.error(e);
+                    alert('网络错误');
+                    renderTable();
+                }
+            }
+
+            input.addEventListener('blur', save);
+            input.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') input.blur();
+            });
+        };
+    </script>
+</body>
+</html>
