@@ -25,6 +25,11 @@
         --tab-active: #1E293B;
         --tab-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
         --t-color: 0.3s ease-out;
+        
+        --bubble-bg: rgba(14, 165, 233, 0.2);
+        --bubble-border: rgba(14, 165, 233, 0.5);
+        --bubble-gold-bg: rgba(250, 204, 21, 0.8);
+        --bubble-gold-border: rgba(234, 179, 8, 1);
     }
     html[data-theme="dark"] {
         --bg1: #0B1120;
@@ -44,6 +49,9 @@
         --tab-text: #94A3B8;
         --tab-active: #F8FAFC;
         --tab-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
+        
+        --bubble-bg: rgba(56, 189, 248, 0.15);
+        --bubble-border: rgba(56, 189, 248, 0.4);
     }
 
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -61,6 +69,54 @@
         align-items: center;
         transition: background var(--t-color), color var(--t-color);
         will-change: background, color;
+        overflow-x: hidden;
+    }
+
+    /* ========== 泡泡系统 ========== */
+    #bubble-container {
+        position: fixed;
+        top: 0; left: 0; width: 100vw; height: 100vh;
+        pointer-events: none; 
+        z-index: 0;
+        overflow: hidden;
+    }
+    .bubble {
+        position: absolute;
+        bottom: -100px;
+        border-radius: 50%;
+        background: var(--bubble-bg);
+        border: 1px solid var(--bubble-border);
+        box-shadow: inset -4px -4px 6px rgba(255,255,255,0.2), inset 4px 4px 10px rgba(0,0,0,0.05);
+        pointer-events: auto; 
+        cursor: pointer;
+        animation: floatUp linear forwards;
+        transition: transform 0.1s;
+    }
+    .bubble:hover {
+        transform: scale(1.1);
+    }
+    .bubble.gold {
+        background: var(--bubble-gold-bg);
+        border: 2px solid var(--bubble-gold-border);
+        box-shadow: 0 0 15px rgba(250, 204, 21, 0.6), inset -4px -4px 6px rgba(255,255,255,0.4);
+    }
+    
+    .bubble.pop {
+        animation: popOut 0.3s cubic-bezier(0.4, 0, 1, 1) forwards;
+        pointer-events: none;
+    }
+    
+    @keyframes floatUp {
+        0% { transform: translateY(0) scale(1); opacity: 0; }
+        10% { opacity: 0.8; }
+        90% { opacity: 0.8; }
+        100% { transform: translateY(-120vh) scale(1.2); opacity: 0; }
+    }
+    
+    @keyframes popOut {
+        0% { transform: scale(1); opacity: 1; }
+        50% { transform: scale(1.5); opacity: 0.5; }
+        100% { transform: scale(0); opacity: 0; }
     }
 
     .container {
@@ -71,6 +127,8 @@
         gap: 20px;
         animation: fadeUp 0.5s ease both;
         margin-top: 10px;
+        position: relative;
+        z-index: 10;
     }
 
     @keyframes fadeUp {
@@ -155,6 +213,7 @@
 
     .loading-menu { text-align: center; color: var(--text-muted); padding: 20px 0; }
 
+    /* ========== 设置弹窗 ========== */
     .modal-overlay {
         position: fixed; inset: 0;
         background: var(--modal-overlay); backdrop-filter: blur(4px);
@@ -231,6 +290,21 @@
     }
     .btn.outline:hover { background: var(--bg-hover); border-color: var(--accent); }
 
+    /* ========== 彩蛋弹窗 ========== */
+    .egg-box { text-align: center; }
+    .egg-emoji { font-size: 3em; margin-bottom: 12px; display: block; }
+    .egg-title { font-size: 1.4em; color: var(--accent); margin-bottom: 10px; }
+    .egg-desc { font-size: 0.95em; color: var(--text-muted); margin-bottom: 20px; }
+    .egg-code-row {
+        display: flex; align-items: center; gap: 8px; justify-content: center; margin-bottom: 24px;
+    }
+    .egg-code {
+        font-family: "Consolas", "Courier New", monospace;
+        font-size: 1em; color: var(--text);
+        background: var(--bg-hover); padding: 8px 16px;
+        border-radius: 10px; border: 1px dashed var(--accent); user-select: all;
+    }
+
     @media (max-width: 600px) {
         body { padding: 16px; }
         .header-card { padding: 12px 16px; }
@@ -242,6 +316,10 @@
 </head>
 <body>
 
+    <!-- 泡泡容器 -->
+    <div id="bubble-container"></div>
+
+    <!-- 页面内容 -->
     <div class="container">
         <div class="header-card">
             <div class="header-left">
@@ -261,6 +339,7 @@
         </div>
     </div>
 
+    <!-- 设置弹窗 -->
     <div class="modal-overlay" id="settingsModal">
         <div class="modal-box">
             <h2 class="modal-title">设置</h2>
@@ -283,6 +362,20 @@
         </div>
     </div>
 
+    <!-- 彩蛋 2 弹窗 -->
+    <div class="modal-overlay" id="eggModal">
+        <div class="modal-box egg-box">
+            <span class="egg-emoji">🫧</span>
+            <h2 class="egg-title">恭喜获得彩蛋 #2</h2>
+            <p class="egg-desc">你找到了隐藏在泡泡里的彩蛋！兑换码如下：</p>
+            <div class="egg-code-row">
+                <code class="egg-code" id="eggCode">qwqeasteregg</code>
+                <button class="btn outline" style="width:auto; margin:0; padding:6px 12px;" id="copyEggBtn">复制</button>
+            </div>
+            <button class="btn danger" style="width:100%;" id="closeEggBtn">收下彩蛋</button>
+        </div>
+    </div>
+
     <script>
         function safeGet(k){ try { return localStorage.getItem(k); } catch(e){ return null; } }
         function safeSet(k,v){ try { localStorage.setItem(k,v); } catch(e){} }
@@ -293,11 +386,9 @@
         var displayName = safeGet('displayName');
         var currentUsername = safeGet('username');
 
-        // 如果没有 token、没名字或没有用户名，直接踢回登录页
         if (!token || !displayName || !currentUsername) {
             window.location.href = 'https://pillager-outpost.github.io/2901space/login.html';
         } else {
-            // 设置问候语名字
             document.getElementById('displayName').textContent = displayName;
         }
 
@@ -336,7 +427,7 @@
             }
         });
 
-        // ========== 问候语 ==========
+        // ========== 动态问候语 ==========
         var hour = new Date().getHours();
         var greeting = "你好";
         if (hour >= 5 && hour < 11) greeting = "早上好";
@@ -369,7 +460,7 @@
         };
 
         function renderMenus(level) {
-            var safeLevel = PERMISSIONS[level] ? level : 'student';
+            var safeLevel = PERMISSIONS[level] ? level : 'guest'; // 无 level 降级访客
             var allowed = PERMISSIONS[safeLevel];
             
             var html = '';
@@ -386,9 +477,7 @@
             menuContainer.innerHTML = html;
         }
 
-        // 请求后端获取 level
         async function fetchUserLevel() {
-            // 走到这里说明肯定有 username
             try {
                 var res = await fetch(GET_USER_URL, {
                     method: 'POST',
@@ -404,19 +493,17 @@
                 if (data.ok && data.level) {
                     renderMenus(data.level);
                 } else {
-                    console.warn('获取权限失败，降级为 student', data);
-                    renderMenus('student'); 
+                    renderMenus('guest');
                 }
             } catch (e) {
                 console.error(e);
-                renderMenus('student'); 
+                renderMenus('guest');
             }
         }
 
-        // 执行拉取
         fetchUserLevel();
 
-        // ========== 弹窗逻辑 ==========
+        // ========== 设置弹窗 ==========
         var settingsModal = document.getElementById('settingsModal');
         var settingsBtn = document.getElementById('settingsBtn');
         var closeSettingsBtn = document.getElementById('closeSettingsBtn');
@@ -434,6 +521,90 @@
             safeRemove('displayName');
             window.location.href = 'https://pillager-outpost.github.io/2901space/';
         });
+
+        // ========== 泡泡系统 & 彩蛋 ==========
+        var bubbleContainer = document.getElementById('bubble-container');
+        var eggModal = document.getElementById('eggModal');
+        var closeEggBtn = document.getElementById('closeEggBtn');
+        var copyEggBtn = document.getElementById('copyEggBtn');
+        var eggCode = document.getElementById('eggCode');
+
+        // 概率动态变量
+        var baseGoldChance = 0.0001;      // 基础 0.01%
+        var currentGoldChance = baseGoldChance;
+        var goldChanceStep = 0.0001;      // 每次点击增加 0.01%
+
+        closeEggBtn.addEventListener('click', () => eggModal.classList.remove('show'));
+        eggModal.addEventListener('click', (e) => {
+            if (e.target === eggModal) eggModal.classList.remove('show');
+        });
+
+        copyEggBtn.addEventListener('click', function() {
+            var text = eggCode.textContent;
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(text).then(() => {
+                    copyEggBtn.textContent = '已复制';
+                    setTimeout(() => copyEggBtn.textContent = '复制', 1500);
+                });
+            } else {
+                var ta = document.createElement('textarea');
+                ta.value = text;
+                document.body.appendChild(ta);
+                ta.select();
+                document.execCommand('copy');
+                document.body.removeChild(ta);
+                copyEggBtn.textContent = '已复制';
+                setTimeout(() => copyEggBtn.textContent = '复制', 1500);
+            }
+        });
+
+        function createBubble() {
+            var b = document.createElement('div');
+            b.classList.add('bubble');
+
+            // 按当前概率判断是否出金泡泡
+            var isGold = Math.random() < currentGoldChance;
+            if (isGold) b.classList.add('gold');
+
+            // 随机大小 20px ~ 50px
+            var size = Math.random() * 30 + 20;
+            b.style.width = size + 'px';
+            b.style.height = size + 'px';
+
+            // 随机水平位置
+            b.style.left = Math.random() * 100 + 'vw';
+
+            // 随机上升时间 8s ~ 15s
+            var duration = Math.random() * 7 + 8;
+            b.style.animationDuration = duration + 's';
+
+            // 点击事件
+            b.addEventListener('click', function(e) {
+                e.stopPropagation(); 
+                if (b.classList.contains('pop')) return;
+                
+                b.classList.add('pop');
+
+                // 1. 增加概率保底
+                currentGoldChance += goldChanceStep;
+
+                // 2. 如果点击的是金泡泡，重置概率并弹窗
+                if (isGold) {
+                    currentGoldChance = baseGoldChance;
+                    setTimeout(() => eggModal.classList.add('show'), 200);
+                }
+            });
+
+            // 自动销毁
+            setTimeout(() => {
+                if (b.parentNode) b.parentNode.removeChild(b);
+            }, duration * 1000 + 500);
+
+            bubbleContainer.appendChild(b);
+        }
+
+        setInterval(createBubble, 400); 
+        for(let i=0; i<5; i++) setTimeout(createBubble, i * 200);
     </script>
 </body>
 </html>
