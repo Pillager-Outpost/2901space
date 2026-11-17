@@ -359,6 +359,10 @@
                 </div>
             </div>
             <div class="setting-row" style="margin-top: 12px;">
+                <span class="setting-label">修改账号信息</span>
+                <button class="btn outline" style="width:auto;margin:0;padding:6px 12px;" id="changeInfoBtn">修改</button>
+            </div>
+            <div class="setting-row">
                 <span class="setting-label">退出登录</span>
                 <button class="btn danger" id="logoutBtn">退出</button>
             </div>
@@ -531,6 +535,11 @@
         closeSettingsBtn.addEventListener('click', () => settingsModal.classList.remove('show'));
         settingsModal.addEventListener('click', (e) => {
             if (e.target === settingsModal) settingsModal.classList.remove('show');
+        });
+
+        // ========== 修改账号信息 ==========
+        document.getElementById('changeInfoBtn').addEventListener('click', function () {
+            window.location.href = 'https://pillager-outpost.github.io/2901space/change_info.html';
         });
 
         // ========== 退出登录 ==========
