@@ -355,7 +355,8 @@
             'crackawatheqwqcode2901': 1,
             'qwqeasteregg': 2,
             'lostin404_10times': 3,
-            'eggs_are_everywhere_2901': 4
+            'eggs_are_everywhere_2901': 4,
+            'secretof2901': 5
         };
         const EGG_ICONS = {
             1: '🎉', 2: '🫧', 3: '🪵', 4: '💡', 5: '💎',
@@ -473,6 +474,8 @@
                 codeInput.value = '';
                 if (eggNumber === 4) {
                     setTimeout(() => showModal('彩蛋4：脑洞神人', '你发现了隐藏的主题切换彩蛋！', '💡'), 300);
+                } else if (eggNumber === 5) {
+                    setTimeout(() => showModal('彩蛋5：2901 的秘密', '你在图库输入 2901 找到了它！', '💎'), 300);
                 }
             }
         });
