@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>发布错题统计 · 2901 Space</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📝</text></svg>">
+<style>
+    :root {
+        --bg1: #E0F2FE; --bg2: #F0FDF4;
+        --card: rgba(255, 255, 255, 0.9);
+        --text: #1E293B; --text-muted: #64748B;
+        --border: rgba(203, 213, 225, 0.6);
+        --accent: #0EA5E9; --btn-bg: #0EA5E9; --btn-text: #fff;
+        --shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+        --shadow-hover: 0 12px 32px rgba(14, 165, 233, 0.15);
+        --bg-hover: #f8fafc; --input-bg: rgba(255, 255, 255, 0.5);
+        --highlight-bg: #BAE6FD; --highlight-text: #0369A1;
+        --err: #c62828; --t-color: 0.3s ease-out;
+    }
+    html[data-theme="dark"] {
+        --bg1: #0B1120; --bg2: #111827;
+        --card: rgba(30, 41, 59, 0.9);
+        --text: #E2E8F0; --text-muted: #94A3B8;
+        --border: rgba(51, 65, 85, 0.8);
+        --accent: #38BDF8; --btn-bg: #38BDF8; --btn-text: #0B1120;
+        --shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+        --shadow-hover: 0 12px 32px rgba(56, 189, 248, 0.2);
+        --bg-hover: #1e293b; --input-bg: rgba(255, 255, 255, 0.06);
+        --highlight-bg: #0C4A6E; --highlight-text: #7DD3FC; --err: #f87171;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+        background: linear-gradient(160deg, var(--bg1), var(--bg2));
+        background-attachment: fixed; color: var(--text);
+        font-family: "华文中宋", "STZhongsong", "SimSun", serif;
+        line-height: 1.8; min-height: 100vh; padding: 88px 20px 48px;
+        transition: background var(--t-color), color var(--t-color); overflow-x: hidden;
+    }
+    .container { max-width: 720px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; animation: fadeUp 0.5s ease both; }
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    .back-home {
+        position: fixed; top: 20px; left: 20px; display: inline-flex; align-items: center; gap: 6px;
+        padding: 10px 18px; font-size: 0.95em; font-family: inherit; color: var(--text); background: var(--card);
+        border: 1px solid var(--border); border-radius: 12px; text-decoration: none; box-shadow: var(--shadow);
+        backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+        transition: background 0.2s, transform 0.15s, color 0.2s, border-color 0.2s; z-index: 1000;
+    }
+    .back-home:hover { background: var(--btn-bg); color: var(--btn-text); border-color: var(--btn-bg); transform: translateY(-2px); }
+    #themeToggle {
+        position: fixed; top: 20px; right: 20px; width: 44px; height: 44px; border-radius: 50%;
+        border: 1px solid var(--border); background: var(--card); color: var(--text); font-size: 1.2em;
+        cursor: pointer; display: flex; align-items: center; justify-content: center;
+        box-shadow: var(--shadow); backdrop-filter: blur(8px);
+        transition: background 0.2s, transform 0.2s, border-color 0.2s; z-index: 999;
+    }
+    #themeToggle:hover { transform: scale(1.08); border-color: var(--accent); }
+    .card {
+        background: var(--card); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+        border: 1px solid var(--border); border-radius: 18px; padding: 26px 28px; box-shadow: var(--shadow);
+        transition: background var(--t-color), border-color var(--t-color), box-shadow 0.3s;
+    }
+    .page-header { text-align: center; margin-bottom: 6px; }
+    .page-header h1 { font-size: 2em; font-weight: normal; line-height: 1.3; margin-bottom: 4px; }
+    .page-header .sub { font-size: 1em; color: var(--text-muted); letter-spacing: 0.04em; }
+    .highlight {
+        background: var(--highlight-bg); background-repeat: no-repeat; background-size: 100% 40%;
+        background-position: 0 88%; padding: 0 8px; color: var(--highlight-text);
+        transition: background var(--t-color), color var(--t-color);
+    }
+    .section-title {
+        font-size: 1.05em; font-weight: normal; color: var(--accent); letter-spacing: 0.1em;
+        margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between;
+        flex-wrap: wrap; gap: 10px; transition: color var(--t-color);
+    }
+    .add-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+    .text-input {
+        flex: 1; min-width: 140px; padding: 10px 14px; font-size: 1em; font-family: inherit;
+        color: var(--text); background: var(--input-bg); border: 1px solid var(--border);
+        border-radius: 10px; outline: none;
+        transition: border-color 0.2s, background var(--t-color), color var(--t-color);
+    }
+    .text-input:focus { border-color: var(--accent); }
+    .text-input::placeholder { color: var(--text-muted); }
+    .mini-btn {
+        font-size: 0.85em; font-family: inherit; letter-spacing: 0; padding: 7px 16px;
+        border-radius: 9px; cursor: pointer; border: 1px solid var(--border);
+        background: transparent; color: var(--text-muted); white-space: nowrap;
+        transition: background 0.2s, color 0.2s, border-color 0.2s, transform 0.15s;
+    }
+    .mini-btn:hover { background: var(--bg-hover); color: var(--accent); border-color: var(--accent); transform: translateY(-1px); }
+    .mini-btn.primary { background: var(--btn-bg); color: var(--btn-text); border-color: var(--btn-bg); }
+    .mini-btn.primary:hover { opacity: 0.9; }
+    .mini-btn.danger { color: var(--err); border-color: var(--err); }
+    .mini-btn.danger:hover { background: var(--err); color: #fff; border-color: var(--err); }
+    .inline-msg { font-size: 0.85em; color: var(--err); min-height: 1.4em; margin-top: 6px; }
+    .board-card { display: flex; flex-direction: column; gap: 12px; }
+    .board-title { margin-bottom: 0; }
+    .option-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+    .option-chip {
+        display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; font-size: 0.98em;
+        color: var(--text); background: var(--input-bg); border: 1px solid var(--border); border-radius: 9px;
+    }
+    .chip-x { border: none; background: transparent; color: var(--text-muted); font-size: 1.15em; line-height: 1; cursor: pointer; padding: 0 2px; transition: color 0.2s; }
+    .chip-x:hover { color: var(--err); }
+    .empty-hint { font-size: 0.95em; color: var(--text-muted); padding: 6px 0; }
+    .publish-bar {
+        display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+        position: sticky; bottom: 16px; z-index: 10;
+    }
+    .board-stats { font-size: 1em; color: var(--text-muted); }
+    .board-stats strong { color: var(--accent); font-size: 1.2em; padding: 0 3px; }
+    .submit-btn {
+        display: inline-flex; align-items: center; gap: 8px; padding: 11px 26px; font-size: 1em;
+        font-family: inherit; color: var(--btn-text); background: var(--btn-bg);
+        border: none; border-radius: 10px; cursor: pointer; box-shadow: 0 4px 14px rgba(14, 165, 233, 0.25);
+        transition: transform 0.2s, box-shadow 0.2s, opacity 0.2s;
+    }
+    .submit-btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 8px 22px rgba(14, 165, 233, 0.35); }
+    .submit-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
+    .modal-overlay {
+        position: fixed; inset: 0; background: rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
+        display: none; align-items: center; justify-content: center; z-index: 2000;
+        opacity: 0; transition: opacity 0.3s ease; padding: 24px;
+    }
+    .modal-overlay.show { display: flex; opacity: 1; }
+    .modal-box {
+        background: var(--card); border: 1px solid var(--border); border-radius: 18px;
+        padding: 28px 24px; width: 100%; max-width: 480px; text-align: center; box-shadow: var(--shadow-hover);
+        animation: popIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); max-height: 85vh; overflow-y: auto;
+    }
+    @keyframes popIn { from { transform: scale(0.85); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+    .modal-emoji { font-size: 2.4em; display: block; margin-bottom: 10px; }
+    .modal-title { font-size: 1.3em; font-weight: normal; color: var(--accent); margin-bottom: 6px; }
+    .modal-desc { font-size: 0.95em; color: var(--text-muted); margin-bottom: 18px; line-height: 1.6; }
+    .json-box {
+        text-align: left; margin-bottom: 20px; padding: 14px; font-family: "Consolas", "Courier New", monospace;
+        font-size: 0.82em; line-height: 1.5; color: var(--text); background: var(--input-bg);
+        border: 1px solid var(--border); border-radius: 10px; white-space: pre-wrap;
+        overflow-wrap: anywhere; max-height: 240px; overflow-y: auto;
+    }
+    .modal-actions { display: flex; gap: 10px; }
+    .modal-actions button, .modal-actions a {
+        flex: 1; padding: 10px; font-size: 0.98em; font-family: inherit; text-align: center;
+        color: var(--btn-text); background: var(--btn-bg); border: none; border-radius: 10px;
+        cursor: pointer; text-decoration: none; transition: transform 0.15s, opacity 0.2s;
+    }
+    .modal-actions button:hover, .modal-actions a:hover { transform: translateY(-2px); }
+    .modal-actions .ghost { background: transparent; color: var(--text); border: 1px solid var(--border); }
+    .denied-card { text-align: center; padding: 48px 28px; }
+    .denied-icon { font-size: 3em; display: block; margin-bottom: 12px; }
+    .denied-title { font-size: 1.5em; font-weight: normal; margin-bottom: 10px; }
+    .denied-desc { color: var(--text-muted); margin-bottom: 24px; }
+    .btn-link {
+        display: inline-block; padding: 10px 24px; color: var(--btn-text); background: var(--btn-bg);
+        border-radius: 10px; text-decoration: none;
+    }
+    @media (max-width: 600px) {
+        body { padding: 76px 14px 32px; }
+        .card { padding: 20px 18px; }
+        .page-header h1 { font-size: 1.6em; }
+        .back-home { top: 12px; left: 12px; padding: 8px 14px; font-size: 0.85em; }
+        #themeToggle { top: 12px; right: 12px; width: 38px; height: 38px; font-size: 1em; }
+        .publish-bar { position: static; }
+        .submit-btn { width: 100%; justify-content: center; }
+        .modal-actions { flex-direction: column; }
+    }
+</style>
+</head>
+<body>
+
+    <a class="back-home" href="https://pillager-outpost.github.io/2901space/home.html" title="返回用户主页"><span>←</span> 返回</a>
+    <button id="themeToggle" title="切换深色/浅色模式">🌙</button>
+
+    <div class="container">
+
+        <div class="card">
+            <div class="page-header">
+                <h1>📝 <span class="highlight">发布错题统计</span></h1>
+                <p class="sub">新建板块、添加题号；发布后将直接替换旧统计</p>
+            </div>
+        </div>
+
+        <div class="card" id="editArea">
+            <h2 class="section-title">➕ 新建板块</h2>
+            <div class="add-row">
+                <input type="text" class="text-input" id="boardNameInput" placeholder="板块名称，例如：必刷题P2" autocomplete="off">
+                <button type="button" class="mini-btn primary" id="addBoardBtn">添加板块</button>
+            </div>
+            <div class="inline-msg" id="boardMsg"></div>
+        </div>
+        <div id="boardList"></div>
+
+        <div class="card publish-bar" id="publishBar">
+            <span class="board-stats">共 <strong id="boardCount">0</strong> 个板块，<strong id="optionCount">0</strong> 个选项</span>
+            <button type="button" class="submit-btn" id="publishBtn" disabled>📤 发布统计</button>
+        </div>
+
+    </div>
+
+    <div class="modal-overlay" id="publishModal">
+        <div class="modal-box">
+            <span class="modal-emoji">🎉</span>
+            <h2 class="modal-title">发布成功</h2>
+            <p class="modal-desc">新统计已上线，旧统计及旧作答已被替换。<br>下面是发布的数据结构：</p>
+            <div class="json-box" id="publishJson"></div>
+            <div class="modal-actions">
+                <button type="button" class="ghost" id="closePublishBtn">关闭</button>
+                <a href="https://pillager-outpost.github.io/2901space/survey.html">去作答页</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function safeGet(k){ try { return localStorage.getItem(k); } catch(e){ return null; } }
+        function safeSet(k,v){ try { localStorage.setItem(k,v); } catch(e){} }
+
+        var HOME_URL  = 'https://pillager-outpost.github.io/2901space/home.html';
+        var LOGIN_URL = 'https://pillager-outpost.github.io/2901space/login.html';
+        var SUPABASE_URL = 'https://htufjnhmowvfocwukrft.supabase.co';
+        var ANON_KEY     = 'sb_publishable_X5i03Y12PA5L71QARR9TIw_6FOlJpVr';
+        var GET_USER_URL = SUPABASE_URL + '/functions/v1/get_user';
+        var SURVEY_URL   = SUPABASE_URL + '/functions/v1/survey';
+
+        var token = safeGet('token');
+        var currentUsername = safeGet('username');
+
+        /* ========== 主题 ========== */
+        var root = document.documentElement;
+        var themeToggle = document.getElementById('themeToggle');
+        function applyTheme(t) {
+            root.setAttribute('data-theme', t);
+            themeToggle.textContent = t === 'dark' ? '☀️' : '🌙';
+        }
+        (function () {
+            var s = safeGet('theme');
+            if (s !== 'dark' && s !== 'light') {
+                try { s = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'; }
+                catch (e) { s = 'light'; }
+            }
+            applyTheme(s);
+        })();
+        themeToggle.addEventListener('click', function () {
+            var next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+            applyTheme(next); safeSet('theme', next);
+        });
+
+        function el(tag, cls, text) {
+            var n = document.createElement(tag);
+            if (cls) n.className = cls;
+            if (text !== undefined) n.textContent = text;
+            return n;
+        }
+        function showDenied(msg) {
+            var container = document.querySelector('.container');
+            container.innerHTML = '';
+            var card = el('div', 'card denied-card');
+            card.appendChild(el('span', 'denied-icon', '🔒'));
+            card.appendChild(el('h1', 'denied-title', '无法访问'));
+            card.appendChild(el('p', 'denied-desc', msg));
+            var a = el('a', 'btn-link', '← 返回用户主页'); a.href = HOME_URL;
+            card.appendChild(a);
+            container.appendChild(card);
+        }
+        async function checkAdmin() {
+            if (!token || !currentUsername) { location.href = LOGIN_URL; return false; }
+            try {
+                var res = await fetch(GET_USER_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'apikey': ANON_KEY, 'Authorization': 'Bearer ' + ANON_KEY },
+                    body: JSON.stringify({ username: currentUsername })
+                });
+                var data = await res.json();
+                if (res.ok && data.ok && data.level === 'admin') return true;
+                showDenied('当前页面仅管理员可用，你的身份为 ' + (data.level || '未知') + '。');
+            } catch (e) {
+                showDenied('身份校验失败，请刷新重试。');
+            }
+            return false;
+        }
+
+        /* ========== 数据 ========== */
+        var SURVEY_DATA = { title: '生物错题统计', groups: [] };
+        var uidCounter = 0;
+        function newId(){ return 'g_' + Date.now().toString(36) + '_' + (++uidCounter); }
+
+        /* ========== 板块编辑 ========== */
+        var boardNameInput = document.getElementById('boardNameInput');
+        var boardMsg = document.getElementById('boardMsg');
+        function setBoardMsg(text) { boardMsg.textContent = text || ''; }
+
+        function addBoard() {
+            var name = boardNameInput.value.trim();
+            if (!name) { setBoardMsg('请输入板块名称'); boardNameInput.focus(); return; }
+            if (SURVEY_DATA.groups.some(function (g) { return g.name === name; })) { setBoardMsg('板块名称已存在'); return; }
+            SURVEY_DATA.groups.push({ id: newId(), name: name, questions: [] });
+            boardNameInput.value = ''; setBoardMsg(''); renderBoards();
+        }
+        document.getElementById('addBoardBtn').addEventListener('click', addBoard);
+        boardNameInput.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); addBoard(); } });
+
+        var boardList = document.getElementById('boardList');
+        var boardCount = document.getElementById('boardCount');
+        var optionCount = document.getElementById('optionCount');
+        var publishBtn = document.getElementById('publishBtn');
+
+        function updateStats() {
+            var total = SURVEY_DATA.groups.reduce(function (s, g) { return s + g.questions.length; }, 0);
+            boardCount.textContent = SURVEY_DATA.groups.length;
+            optionCount.textContent = total;
+            publishBtn.disabled = (SURVEY_DATA.groups.length === 0 || total === 0);
+        }
+
+        function renderBoards() {
+            boardList.innerHTML = '';
+            if (!SURVEY_DATA.groups.length) {
+                var hint = el('div', 'card');
+                hint.appendChild(el('div', 'empty-hint', '还没有板块，先在上方新建一个吧～'));
+                boardList.appendChild(hint);
+                updateStats(); return;
+            }
+            SURVEY_DATA.groups.forEach(function (group) {
+                var card = el('div', 'card board-card');
+                var head = el('div', 'group-head');
+                head.appendChild(el('h2', 'section-title board-title', '📖 ' + group.name));
+                var delBoard = el('button', 'mini-btn danger', '删除板块');
+                delBoard.type = 'button';
+                delBoard.addEventListener('click', function () {
+                    if (!confirm('确定删除板块「' + group.name + '」吗？')) return;
+                    SURVEY_DATA.groups = SURVEY_DATA.groups.filter(function (g) { return g.id !== group.id; });
+                    renderBoards();
+                });
+                head.appendChild(delBoard); card.appendChild(head);
+
+                var addRow = el('div', 'add-row');
+                var input = el('input', 'text-input');
+                input.type = 'text'; input.placeholder = '题号，例如 4(1)，回车添加'; input.autocomplete = 'off';
+                var addOpt = el('button', 'mini-btn', '＋ 添加选项');
+                addOpt.type = 'button';
+                var optMsg = el('div', 'inline-msg');
+                function doAdd() {
+                    var v = input.value.trim();
+                    if (!v) { optMsg.textContent = '请输入题号'; input.focus(); return; }
+                    if (group.questions.indexOf(v) !== -1) { optMsg.textContent = '该题号已存在'; return; }
+                    group.questions.push(v); input.value = ''; optMsg.textContent = ''; renderBoards();
+                }
+                addOpt.addEventListener('click', doAdd);
+                input.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); doAdd(); } });
+                addRow.appendChild(input); addRow.appendChild(addOpt);
+                card.appendChild(addRow); card.appendChild(optMsg);
+
+                var chips = el('div', 'option-chips');
+                if (!group.questions.length) chips.appendChild(el('div', 'empty-hint', '还没有选项，先添加一个吧～'));
+                group.questions.forEach(function (q, idx) {
+                    var chip = el('span', 'option-chip');
+                    chip.appendChild(document.createTextNode(q));
+                    var x = el('button', 'chip-x', '×');
+                    x.type = 'button'; x.title = '移除 ' + q;
+                    x.addEventListener('click', function () { group.questions.splice(idx, 1); renderBoards(); });
+                    chip.appendChild(x); chips.appendChild(chip);
+                });
+                card.appendChild(chips);
+                boardList.appendChild(card);
+            });
+            updateStats();
+        }
+
+        /* ========== 载入当前统计作为编辑起点 ========== */
+        async function loadCurrentConfig() {
+            try {
+                var res = await fetch(SURVEY_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'apikey': ANON_KEY, 'Authorization': 'Bearer ' + ANON_KEY },
+                    body: JSON.stringify({ action: 'get_config', currentUser: currentUsername })
+                });
+                var data = await res.json();
+                if (res.ok && data.ok && data.data && Array.isArray(data.data.groups)) {
+                    SURVEY_DATA = data.data;
+                }
+            } catch (e) {}
+            renderBoards();
+        }
+
+        /* ========== 发布 ========== */
+        var publishModal = document.getElementById('publishModal');
+        var publishJson = document.getElementById('publishJson');
+        function closePublish() { publishModal.classList.remove('show'); }
+        document.getElementById('closePublishBtn').addEventListener('click', closePublish);
+        publishModal.addEventListener('click', function (e) { if (e.target === publishModal) closePublish(); });
+
+        publishBtn.addEventListener('click', async function () {
+            if (!SURVEY_DATA.groups.length) { alert('请先新建至少一个板块'); return; }
+            var total = SURVEY_DATA.groups.reduce(function (s, g) { return s + g.questions.length; }, 0);
+            if (!total) { alert('请至少添加一个选项'); return; }
+
+            publishBtn.disabled = true;
+            var oldText = publishBtn.textContent;
+            publishBtn.textContent = '发布中…';
+            try {
+                var res = await fetch(SURVEY_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'apikey': ANON_KEY, 'Authorization': 'Bearer ' + ANON_KEY },
+                    body: JSON.stringify({ action: 'publish', currentUser: currentUsername, config: SURVEY_DATA })
+                });
+                var data = await res.json().catch(function () { return {}; });
+                if (!res.ok || !data.ok) throw new Error(data.msg || ('发布失败：' + res.status));
+                publishJson.textContent = JSON.stringify(SURVEY_DATA, null, 2);
+                publishModal.classList.add('show');
+            } catch (err) {
+                alert('❌ 发布失败：' + err.message);
+            } finally {
+                publishBtn.textContent = oldText;
+                updateStats();
+            }
+        });
+
+        /* ========== 初始化 ========== */
+        (async function init() {
+            if (!(await checkAdmin())) return;
+            await loadCurrentConfig();
+        })();
+    </script>
+</body>
+</html>
