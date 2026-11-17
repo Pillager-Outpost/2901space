@@ -76,6 +76,7 @@
         margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between;
         flex-wrap: wrap; gap: 10px; transition: color var(--t-color);
     }
+    .count-note { font-size: 0.8em; color: var(--text-muted); letter-spacing: 0; }
     .refresh-btn {
         font-size: 0.8em; font-family: inherit; letter-spacing: 0; padding: 4px 12px;
         border-radius: 8px; cursor: pointer; border: 1px solid var(--border);
@@ -87,48 +88,31 @@
 
     .stats { display: flex; gap: 14px; flex-wrap: wrap; justify-content: center; }
     .stat-box {
-        flex: 1; min-width: 140px; text-align: center; padding: 16px 10px;
+        flex: 1; min-width: 150px; text-align: center; padding: 16px 10px;
         background: var(--input-bg); border: 1px solid var(--border); border-radius: 14px;
     }
     .stat-num { font-size: 1.9em; color: var(--accent); line-height: 1.2; }
     .stat-num.sm { font-size: 1.05em; padding-top: 10px; }
     .stat-label { font-size: 0.9em; color: var(--text-muted); }
+    .stat-note { font-size: 0.78em; color: var(--text-muted); margin-top: 2px; }
 
-    /* 题号错误人数行；>5 标红 */
+    /* 错题统计结果行：xx题 · xx人；>5 标红 */
     .q-row {
         display: flex; align-items: center; gap: 12px;
         padding: 8px 10px; border-bottom: 1px dashed var(--border);
         border-left: 3px solid transparent; border-radius: 6px;
     }
     .q-row:last-child { border-bottom: none; }
-    .q-row.hot {
-        border-left-color: var(--err);
-        background: var(--err-bg);
-    }
-    .q-name { min-width: 64px; font-size: 1em; }
+    .q-row.hot { border-left-color: var(--err); background: var(--err-bg); }
+    .q-group { min-width: 76px; font-size: 0.8em; color: var(--text-muted); }
+    .q-name { min-width: 70px; font-size: 1em; }
     .q-bar-wrap { flex: 1; height: 12px; background: var(--track); border-radius: 999px; overflow: hidden; }
     .q-bar { height: 100%; background: linear-gradient(90deg, var(--accent), #6366F1); border-radius: 999px; width: 0; transition: width 0.6s ease; }
     .q-row.hot .q-bar { background: linear-gradient(90deg, #f97316, var(--err)); }
-    .q-num { min-width: 130px; text-align: right; font-size: 0.9em; color: var(--text-muted); }
-    .q-num strong { color: var(--accent); font-size: 1.15em; }
+    .q-num { min-width: 78px; text-align: right; font-size: 0.92em; color: var(--text-muted); }
+    .q-num strong { color: var(--accent); font-size: 1.2em; }
     .q-row.hot .q-num strong { color: var(--err); }
     .q-flag { color: var(--err); font-weight: bold; margin-right: 2px; }
-
-    /* 最易错题 TOP */
-    .top-list { margin-top: 18px; }
-    .top-item {
-        display: flex; align-items: center; justify-content: space-between; gap: 12px;
-        padding: 8px 0; border-bottom: 1px dashed var(--border);
-    }
-    .top-item:last-child { border-bottom: none; }
-    .top-rank {
-        display: inline-flex; align-items: center; justify-content: center;
-        width: 26px; height: 26px; border-radius: 50%; flex: none;
-        background: var(--input-bg); border: 1px solid var(--border); color: var(--text-muted); font-size: 0.85em;
-    }
-    .top-rank.first { background: var(--err); color: #fff; border-color: var(--err); }
-    .top-name { flex: 1; }
-    .top-count { color: var(--err); font-weight: bold; }
 
     .student-item { padding: 12px 0; border-bottom: 1px dashed var(--border); }
     .student-item:last-child { border-bottom: none; }
@@ -151,8 +135,9 @@
         .page-header h1 { font-size: 1.6em; }
         .back-home { top: 12px; left: 12px; padding: 8px 14px; font-size: 0.85em; }
         #themeToggle { top: 12px; right: 12px; width: 38px; height: 38px; font-size: 1em; }
-        .q-num { min-width: 104px; font-size: 0.82em; }
-        .stat-box { min-width: 120px; }
+        .q-group { display: none; }
+        .q-num { min-width: 74px; font-size: 0.85em; }
+        .stat-box { min-width: 130px; }
     }
 </style>
 </head>
@@ -166,38 +151,44 @@
         <div class="card">
             <div class="page-header">
                 <h1>📊 <span class="highlight">错题统计结果</span></h1>
-                <p class="sub">按板块与题号汇总学生的勾选情况（错误人数 &gt; 5 标红）</p>
+                <p class="sub">按题号顺序展示各题错误人数（&gt; 5 人标红）</p>
             </div>
         </div>
 
         <div class="card" id="overviewCard">
             <h2 class="section-title">
-                <span>📈 概览</span>
+                <span>📈 概况</span>
                 <button class="refresh-btn" id="refreshBtn" title="刷新">🔄 刷新</button>
             </h2>
             <div class="stats">
-                <div class="stat-box"><div class="stat-num" id="statPeople">0</div><div class="stat-label">提交人数</div></div>
-                <div class="stat-box"><div class="stat-num" id="statQuestions">0</div><div class="stat-label">统计题号</div></div>
-                <div class="stat-box"><div class="stat-num sm" id="statTime">—</div><div class="stat-label">最后发布</div></div>
+                <div class="stat-box">
+                    <div class="stat-num" id="statActive">0.0%</div>
+                    <div class="stat-label">统计活跃度</div>
+                    <div class="stat-note">统计人数 ÷ 52 · <span id="statActiveNote">0 / 52</span></div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-num" id="statAvg">0.00</div>
+                    <div class="stat-label">平均错题数</div>
+                    <div class="stat-note" id="statAvgNote">共 0 人次勾选</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-num" id="statPeople">0</div>
+                    <div class="stat-label">统计人数</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-num sm" id="statTime">—</div>
+                    <div class="stat-label">最后发布</div>
+                </div>
             </div>
         </div>
 
-        <!-- 汇总分析区 -->
-        <div class="card" id="aggregateCard">
-            <h2 class="section-title">🧮 汇总分析</h2>
-            <div class="stats">
-                <div class="stat-box"><div class="stat-num" id="aggAvg">0</div><div class="stat-label">人均错题数</div></div>
-                <div class="stat-box"><div class="stat-num" id="aggTotal">0</div><div class="stat-label">总勾选次数</div></div>
-                <div class="stat-box"><div class="stat-num" id="aggMax">0</div><div class="stat-label">个人最多错题</div></div>
-                <div class="stat-box"><div class="stat-num" id="aggMin">0</div><div class="stat-label">个人最少错题</div></div>
-            </div>
-            <div class="top-list">
-                <h2 class="section-title" style="margin-top:18px;">🔴 最易错题 TOP 5</h2>
-                <div id="topWrongList"></div>
-            </div>
+        <div class="card" id="resultCard">
+            <h2 class="section-title">
+                <span>📋 各题错误人数</span>
+                <span class="count-note" id="qCountNote"></span>
+            </h2>
+            <div id="resultList"></div>
         </div>
-
-        <div id="summaryList"></div>
 
         <div class="card">
             <h2 class="section-title">👥 学生明细</h2>
@@ -219,7 +210,9 @@
 
         var token = safeGet('token');
         var currentUsername = safeGet('username');
-        var HOT_THRESHOLD = 5; // 错误人数 > 5 标红
+
+        var HOT_THRESHOLD = 5;   // 错误人数 > 5 标红
+        var CLASS_TOTAL   = 52;  // 统计活跃度分母：班级总人数
 
         /* ========== 主题 ========== */
         var root = document.documentElement;
@@ -261,6 +254,23 @@
                 hour: '2-digit', minute: '2-digit', hour12: false
             });
         }
+        // 自然排序：4(1) < 4(2) < 10 < 12(3)
+        function naturalCompare(a, b) {
+            var sa = String(a || ''), sb = String(b || '');
+            var re = /(\d+)/;
+            while (sa.length && sb.length) {
+                var ma = re.exec(sa), mb = re.exec(sb);
+                if (!ma || !mb) return sa.localeCompare(sb, 'zh-CN');
+                var pa = ma.index, pb = mb.index;
+                var ta = sa.slice(0, pa), tb = sb.slice(0, pb);
+                if (ta !== tb) return ta.localeCompare(tb, 'zh-CN');
+                var na = parseInt(ma[1], 10), nb = parseInt(mb[1], 10);
+                if (na !== nb) return na - nb;
+                sa = sa.slice(pa + ma[1].length);
+                sb = sb.slice(pb + mb[1].length);
+            }
+            return sa.length - sb.length;
+        }
         function showDenied(msg) {
             var container = document.querySelector('.container');
             container.innerHTML = '';
@@ -288,74 +298,47 @@
         }
 
         /* ========== 渲染 ========== */
-        var summaryList = document.getElementById('summaryList');
+        var resultList = document.getElementById('resultList');
         var detailList = document.getElementById('detailList');
 
         function renderResults(data) {
             var responses = data.responses || [];
-            var summary = data.summary || [];
-            var groups = (data.config && data.config.groups) ? data.config.groups : [];
+            var summary  = data.summary || [];
+            var groups   = (data.config && data.config.groups) ? data.config.groups : [];
 
-            // 概览
-            document.getElementById('statPeople').textContent = data.respondentCount || 0;
-            document.getElementById('statQuestions').textContent = summary.length;
+            var people = data.respondentCount || responses.length || 0;
+            var totalSelected = responses.reduce(function (s, r) {
+                return s + (Array.isArray(r.selected) ? r.selected.length : 0);
+            }, 0);
+            var avg = people ? (totalSelected / people) : 0;
+            var active = people / CLASS_TOTAL * 100;
+
+            // ===== 概况 =====
+            document.getElementById('statPeople').textContent = people;
             document.getElementById('statTime').textContent = formatTime(data.updatedAt);
+            document.getElementById('statActive').textContent = active.toFixed(1) + '%';
+            document.getElementById('statActiveNote').textContent = people + ' / ' + CLASS_TOTAL;
+            document.getElementById('statAvg').textContent = avg.toFixed(2);
+            document.getElementById('statAvgNote').textContent = '共 ' + totalSelected + ' 人次勾选';
 
-            // ===== 汇总分析 =====
-            var perStudent = responses.map(function (r) {
-                return Array.isArray(r.selected) ? r.selected.length : 0;
+            // ===== 错题统计结果：按题号顺序 =====
+            resultList.innerHTML = '';
+            var items = summary.slice().sort(function (a, b) {
+                return naturalCompare(a.question, b.question)
+                    || naturalCompare(a.groupName || '', b.groupName || '');
             });
-            var totalSelected = perStudent.reduce(function (s, n) { return s + n; }, 0);
-            var avg = responses.length ? (totalSelected / responses.length) : 0;
-            var maxErr = perStudent.length ? Math.max.apply(null, perStudent) : 0;
-            var minErr = perStudent.length ? Math.min.apply(null, perStudent) : 0;
+            document.getElementById('qCountNote').textContent = '共 ' + items.length + ' 题';
 
-            document.getElementById('aggAvg').textContent = avg.toFixed(2);
-            document.getElementById('aggTotal').textContent = totalSelected;
-            document.getElementById('aggMax').textContent = maxErr;
-            document.getElementById('aggMin').textContent = minErr;
-
-            // 最易错题 TOP 5
-            var topList = document.getElementById('topWrongList');
-            topList.innerHTML = '';
-            var ranked = summary.slice().filter(function (s) { return s.count > 0; })
-                .sort(function (a, b) { return b.count - a.count; }).slice(0, 5);
-            if (!ranked.length) {
-                topList.appendChild(el('div', 'empty-hint', '暂无数据'));
+            if (!items.length) {
+                resultList.appendChild(el('div', 'empty-hint', '管理员还没有发布错题统计，或暂时没有作答数据。'));
             } else {
-                ranked.forEach(function (s, i) {
-                    var row = el('div', 'top-item');
-                    var rank = el('span', 'top-rank' + (i === 0 ? ' first' : ''), String(i + 1));
-                    row.appendChild(rank);
-                    row.appendChild(el('span', 'top-name', (s.groupName || '') + ' · ' + s.question));
-                    row.appendChild(el('span', 'top-count', s.count + ' 人错误'));
-                    topList.appendChild(row);
-                });
-            }
-
-            // ===== 各板块题号错误人数 =====
-            summaryList.innerHTML = '';
-            var byGroup = {};
-            summary.forEach(function (s) {
-                if (!byGroup[s.group]) byGroup[s.group] = { name: s.groupName, items: [] };
-                byGroup[s.group].items.push(s);
-            });
-            if (!groups.length) {
-                var c0 = el('div', 'card');
-                c0.appendChild(el('div', 'empty-hint', '管理员还没有发布错题统计。'));
-                summaryList.appendChild(c0);
-            }
-            groups.forEach(function (g) {
-                var items = byGroup[g.id] || [];
-                if (!items.length) return;
-                var card = el('div', 'card');
-                card.appendChild(el('h2', 'section-title', '📖 ' + g.name));
                 items.forEach(function (it) {
                     var hot = it.count > HOT_THRESHOLD;
                     var pct = it.total ? Math.round(it.count / it.total * 100) : 0;
 
                     var row = el('div', 'q-row' + (hot ? ' hot' : ''));
-                    row.appendChild(el('span', 'q-name', it.question));
+                    row.appendChild(el('span', 'q-group', it.groupName || ''));
+                    row.appendChild(el('span', 'q-name', it.question + ' 题'));
 
                     var wrap = el('div', 'q-bar-wrap');
                     var bar = el('div', 'q-bar');
@@ -364,16 +347,14 @@
 
                     var num = el('span', 'q-num');
                     if (hot) num.appendChild(el('span', 'q-flag', '❗'));
-                    var strong = el('strong', '', String(it.count));
-                    num.appendChild(strong);
-                    num.appendChild(document.createTextNode(' 人错误 · ' + pct + '%'));
+                    num.appendChild(el('strong', '', String(it.count)));
+                    num.appendChild(document.createTextNode(' 人'));
                     row.appendChild(num);
 
-                    card.appendChild(row);
+                    resultList.appendChild(row);
                     setTimeout(function () { bar.style.width = pct + '%'; }, 50);
                 });
-                summaryList.appendChild(card);
-            });
+            }
 
             // ===== 学生明细 =====
             detailList.innerHTML = '';
@@ -418,10 +399,8 @@
                 if (!res.ok || !data.ok) throw new Error(data.msg || ('加载失败：' + res.status));
                 renderResults(data);
             } catch (err) {
-                summaryList.innerHTML = '';
-                var c = el('div', 'card');
-                c.appendChild(el('div', 'empty-hint', '❌ 加载失败：' + err.message));
-                summaryList.appendChild(c);
+                resultList.innerHTML = '';
+                resultList.appendChild(el('div', 'empty-hint', '❌ 加载失败：' + err.message));
             } finally {
                 refreshBtn.disabled = false;
             }
