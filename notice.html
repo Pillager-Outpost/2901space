@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>通知板 · 2901 Space</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📢</text></svg>">
+<style>
+    :root {
+        --bg1: #E0F2FE;
+        --bg2: #F0FDF4;
+        --card: rgba(255, 255, 255, 0.9);
+        --text: #1E293B;
+        --text-muted: #64748B;
+        --border: rgba(203, 213, 225, 0.6);
+        --accent: #0EA5E9;
+        --btn-bg: #0EA5E9;
+        --btn-text: #fff;
+        --shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+        --shadow-hover: 0 12px 32px rgba(14, 165, 233, 0.15);
+        --bg-hover: #f8fafc;
+        --input-bg: rgba(255, 255, 255, 0.5);
+        --highlight-bg: #BAE6FD;
+        --highlight-text: #0369A1;
+        --ok: #0a7d32;
+        --err: #c62828;
+        --t-color: 0.3s ease-out;
+    }
+    html[data-theme="dark"] {
+        --bg1: #0B1120;
+        --bg2: #111827;
+        --card: rgba(30, 41, 59, 0.9);
+        --text: #E2E8F0;
+        --text-muted: #94A3B8;
+        --border: rgba(51, 65, 85, 0.8);
+        --accent: #38BDF8;
+        --btn-bg: #38BDF8;
+        --btn-text: #0B1120;
+        --shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+        --shadow-hover: 0 12px 32px rgba(56, 189, 248, 0.2);
+        --bg-hover: #1e293b;
+        --input-bg: rgba(255, 255, 255, 0.06);
+        --highlight-bg: #0C4A6E;
+        --highlight-text: #7DD3FC;
+        --ok: #4ade80;
+        --err: #f87171;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+
+    body {
+        background: linear-gradient(160deg, var(--bg1), var(--bg2));
+        background-attachment: fixed;
+        color: var(--text);
+        font-family: "华文中宋", "STZhongsong", "SimSun", serif;
+        line-height: 1.8;
+        min-height: 100vh;
+        padding: 88px 20px 48px;
+        transition: background var(--t-color), color var(--t-color);
+        overflow-x: hidden;
+    }
+
+    .container {
+        max-width: 720px;
+        margin: 0 auto;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        animation: fadeUp 0.5s ease both;
+    }
+    @keyframes fadeUp {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ========== 顶部返回 / 主题 ========== */
+    .back-home {
+        position: fixed; top: 20px; left: 20px;
+        display: inline-flex; align-items: center; gap: 6px;
+        padding: 10px 18px; font-size: 0.95em; font-family: inherit;
+        color: var(--text); background: var(--card);
+        border: 1px solid var(--border); border-radius: 12px;
+        text-decoration: none; box-shadow: var(--shadow);
+        backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+        transition: background 0.2s, transform 0.15s, color 0.2s, border-color 0.2s;
+        z-index: 1000;
+    }
+    .back-home:hover {
+        background: var(--btn-bg); color: var(--btn-text);
+        border-color: var(--btn-bg); transform: translateY(-2px);
+    }
+    #themeToggle {
+        position: fixed; top: 20px; right: 20px;
+        width: 44px; height: 44px; border-radius: 50%;
+        border: 1px solid var(--border); background: var(--card);
+        color: var(--text); font-size: 1.2em; cursor: pointer;
+        display: flex; align-items: center; justify-content: center;
+        box-shadow: var(--shadow); backdrop-filter: blur(8px);
+        transition: background 0.2s, transform 0.2s, border-color 0.2s;
+        z-index: 999;
+    }
+    #themeToggle:hover { transform: scale(1.08); border-color: var(--accent); }
+
+    /* ========== 卡片 ========== */
+    .card {
+        background: var(--card);
+        backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+        border: 1px solid var(--border); border-radius: 18px;
+        padding: 26px 28px; box-shadow: var(--shadow);
+        transition: background var(--t-color), border-color var(--t-color), box-shadow 0.3s;
+    }
+    .page-header { text-align: center; margin-bottom: 6px; }
+    .page-header h1 { font-size: 2em; font-weight: normal; line-height: 1.3; margin-bottom: 4px; }
+    .page-header .sub { font-size: 1em; color: var(--text-muted); letter-spacing: 0.04em; }
+    .highlight {
+        background: var(--highlight-bg); background-repeat: no-repeat;
+        background-size: 100% 40%; background-position: 0 88%;
+        padding: 0 8px; color: var(--highlight-text);
+        transition: background var(--t-color), color var(--t-color);
+    }
+    .section-title {
+        font-size: 1.05em; font-weight: normal; color: var(--accent);
+        letter-spacing: 0.2em; margin-bottom: 18px;
+        display: flex; align-items: center; justify-content: space-between;
+        transition: color var(--t-color);
+    }
+    .refresh-btn {
+        font-size: 0.8em; font-family: inherit; letter-spacing: 0;
+        padding: 4px 12px; border-radius: 8px; cursor: pointer;
+        border: 1px solid var(--border); background: transparent; color: var(--text-muted);
+        transition: background 0.2s, color 0.2s, border-color 0.2s;
+    }
+    .refresh-btn:hover { background: var(--bg-hover); color: var(--accent); border-color: var(--accent); }
+
+    /* ========== 通知列表 ========== */
+    .notice-list { display: flex; flex-direction: column; gap: 14px; }
+    .notice-item {
+        border: 1px solid var(--border); border-radius: 14px;
+        padding: 16px 18px; background: var(--input-bg);
+        transition: border-color 0.2s, transform 0.15s, background var(--t-color);
+    }
+    .notice-item:hover { border-color: var(--accent); transform: translateY(-2px); }
+    .notice-head {
+        display: flex; align-items: baseline; justify-content: space-between;
+        gap: 12px; margin-bottom: 8px; flex-wrap: wrap;
+    }
+    .notice-author {
+        font-size: 1.05em; color: var(--accent); font-weight: bold;
+        display: inline-flex; align-items: center; gap: 6px;
+        transition: color var(--t-color);
+    }
+    .notice-author .dot {
+        width: 8px; height: 8px; border-radius: 50%; background: var(--accent);
+    }
+    .notice-time { font-size: 0.85em; color: var(--text-muted); }
+    .notice-text {
+        font-size: 1em; white-space: pre-wrap; overflow-wrap: anywhere;
+        line-height: 1.75; color: var(--text);
+    }
+    .empty { text-align: center; color: var(--text-muted); padding: 32px 0; font-size: 1em; }
+
+    /* ========== 发布表单 ========== */
+    .publish-form { display: flex; flex-direction: column; gap: 14px; }
+    .publish-form textarea {
+        width: 100%; min-height: 130px; resize: vertical;
+        padding: 14px 16px; font-size: 1.02em; font-family: inherit; line-height: 1.7;
+        color: var(--text); background: var(--input-bg);
+        border: 1px solid var(--border); border-radius: 12px;
+        backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+        transition: border-color 0.2s, box-shadow 0.2s, background var(--t-color), color var(--t-color);
+    }
+    .publish-form textarea:focus {
+        outline: none; border-color: var(--accent);
+        box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.18);
+    }
+    .publish-form textarea::placeholder { color: var(--text-muted); }
+
+    /* —— 滑块人机验证 —— */
+    .slider-captcha { user-select: none; -webkit-user-select: none; margin: 2px 0; }
+    .slider-track {
+        position: relative; height: 46px;
+        background: var(--input-bg); border: 1px solid var(--border);
+        border-radius: 12px; overflow: hidden;
+        backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+        transition: border-color 0.2s, background var(--t-color);
+    }
+    .slider-captcha.passed .slider-track { border-color: #22C55E; }
+    .slider-captcha.failed .slider-track { border-color: #EF4444; }
+    .slider-fill {
+        position: absolute; top: 0; left: 0; bottom: 0; width: 0;
+        background: linear-gradient(90deg, rgba(14,165,233,0.25), rgba(99,102,241,0.25));
+        transition: background 0.2s; pointer-events: none;
+    }
+    .slider-captcha.passed .slider-fill { background: linear-gradient(90deg, rgba(34,197,94,0.3), rgba(34,197,94,0.45)); }
+    .slider-captcha.failed .slider-fill { background: linear-gradient(90deg, rgba(239,68,68,0.3), rgba(239,68,68,0.45)); }
+    .slider-label {
+        position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+        font-size: 0.95em; color: var(--text-muted); pointer-events: none;
+        padding: 0 52px; text-align: center; transition: opacity 0.2s, color 0.2s;
+    }
+    .slider-captcha.passed .slider-label { color: #16A34A; }
+    .slider-captcha.failed .slider-label { color: #DC2626; }
+    html[data-theme="dark"] .slider-captcha.passed .slider-label { color: #4ADE80; }
+    html[data-theme="dark"] .slider-captcha.failed .slider-label { color: #F87171; }
+    .slider-thumb {
+        position: absolute; top: 3px; left: 3px;
+        width: 40px; height: 40px; border-radius: 10px;
+        background: var(--btn-bg); color: var(--btn-text);
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.1em; cursor: grab;
+        box-shadow: 0 2px 10px rgba(14,165,233,0.35);
+        transition: background 0.2s, transform 0.1s; touch-action: none;
+    }
+    .slider-thumb:active { cursor: grabbing; transform: scale(0.98); }
+    .slider-captcha.passed .slider-thumb { background: #22C55E; }
+    .slider-captcha.failed .slider-thumb { background: #EF4444; }
+
+    .form-footer {
+        display: flex; align-items: center; justify-content: space-between;
+        gap: 12px; flex-wrap: wrap;
+    }
+    .char-count { font-size: 0.9em; color: var(--text-muted); }
+    .submit-btn {
+        display: inline-flex; align-items: center; gap: 8px;
+        padding: 11px 26px; font-size: 1em; font-family: inherit;
+        color: var(--btn-text); background: var(--btn-bg);
+        border: none; border-radius: 10px; cursor: pointer;
+        box-shadow: 0 4px 14px rgba(14, 165, 233, 0.25);
+        transition: transform 0.2s, box-shadow 0.2s, background var(--t-color), opacity 0.2s;
+    }
+    .submit-btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 8px 22px rgba(14, 165, 233, 0.35); }
+    .submit-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
+    .form-msg { font-size: 0.98em; min-height: 1.5em; margin-top: 2px; }
+    .form-msg.ok { color: var(--ok); }
+    .form-msg.err { color: var(--err); }
+    .login-hint {
+        font-size: 0.98em; color: var(--text-muted); text-align: center;
+        padding: 18px 0;
+    }
+    .login-hint a { color: var(--accent); text-decoration: none; border-bottom: 1px dashed var(--accent); }
+
+    @media (max-width: 600px) {
+        body { padding: 76px 14px 32px; }
+        .card { padding: 20px 18px; }
+        .page-header h1 { font-size: 1.6em; }
+        .page-header .sub { font-size: 0.95em; }
+        .back-home { top: 12px; left: 12px; padding: 8px 14px; font-size: 0.85em; }
+        #themeToggle { top: 12px; right: 12px; width: 38px; height: 38px; font-size: 1em; }
+        .form-footer { flex-direction: column; align-items: stretch; }
+        .submit-btn { width: 100%; justify-content: center; }
+    }
+</style>
+</head>
+<body>
+
+    <a class="back-home" href="https://pillager-outpost.github.io/2901space/home.html" title="返回用户主页">
+        <span>←</span> 返回
+    </a>
+    <button id="themeToggle" title="切换深色/浅色模式">🌙</button>
+
+    <div class="container">
+
+        <div class="card">
+            <div class="page-header">
+                <h1><span class="highlight">通知板</span></h1>
+                <p class="sub">最新公告一览 · 也可以在下方发布通知</p>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2 class="section-title">
+                <span>📋 最新通知</span>
+                <button class="refresh-btn" id="refreshBtn" title="刷新">🔄 刷新</button>
+            </h2>
+            <div class="notice-list" id="noticeList">
+                <div class="empty">正在加载通知…</div>
+            </div>
+        </div>
+
+        <div class="card" id="publishCard">
+            <h2 class="section-title">✍️ 发布通知</h2>
+            <form class="publish-form" id="publishForm" autocomplete="off">
+                <textarea id="noticeText" maxlength="1000" placeholder="在这里输入通知内容（纯文本），最多 1000 字…"></textarea>
+
+                <!-- 滑块人机验证 -->
+                <div class="slider-captcha" id="sliderCaptcha">
+                    <div class="slider-track">
+                        <div class="slider-fill" id="sliderFill"></div>
+                        <span class="slider-label" id="sliderLabel">按住滑块，拖动到最右侧 →</span>
+                        <div class="slider-thumb" id="sliderThumb">→</div>
+                    </div>
+                </div>
+
+                <div class="form-footer">
+                    <span class="char-count"><span id="charCount">0</span> / 1000</span>
+                    <button type="submit" class="submit-btn" id="submitBtn" disabled>📢 发布通知</button>
+                </div>
+                <p class="form-msg" id="formMsg"></p>
+            </form>
+            <div class="login-hint" id="loginHint" style="display:none;">
+                请先 <a href="https://pillager-outpost.github.io/2901space/login.html">登录</a> 后再发布通知。
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        function safeGet(k){ try { return localStorage.getItem(k); } catch(e){ return null; } }
+        function safeSet(k,v){ try { localStorage.setItem(k,v); } catch(e){} }
+
+        /* ========== Supabase 配置 ========== */
+        var SUPABASE_URL = 'https://htufjnhmowvfocwukrft.supabase.co';
+        var ANON_KEY     = 'sb_publishable_X5i03Y12PA5L71QARR9TIw_6FOlJpVr';
+
+        /* ========== 账号拼接解析（自己拼 / 自己拆） ========== */
+        // 主键形如：liu_zhizhong_0刘智中0_
+        function parseComposite(s) {
+            var m = /^(.*)_0(.*)0_$/.exec(s || '');
+            return m ? { login: m[1], real: m[2] } : { login: s || '', real: '' };
+        }
+        function buildComposite(login, real) {
+            return login + '_0' + real + '0_';
+        }
+        function realNameOf(username) {
+            var c = parseComposite(username);
+            return c.real || (safeGet('displayName') || '') || username || '未知用户';
+        }
+
+        /* ========== 登录态 ========== */
+        var token = safeGet('token');
+        var currentUsername = safeGet('username'); // 拼接后的完整主键
+        var canPublish = !!(token && currentUsername);
+
+        var publishForm = document.getElementById('publishForm');
+        if (!canPublish) {
+            publishForm.style.display = 'none';
+            document.getElementById('loginHint').style.display = 'block';
+        }
+
+        /* ========== 主题 ========== */
+        var root = document.documentElement;
+        var themeToggle = document.getElementById('themeToggle');
+        function applyTheme(t) {
+            root.setAttribute('data-theme', t);
+            themeToggle.textContent = t === 'dark' ? '☀️' : '🌙';
+        }
+        function getInitialTheme() {
+            var s = safeGet('theme');
+            if (s === 'dark' || s === 'light') return s;
+            try { return matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'; }
+            catch(e){ return 'light'; }
+        }
+        applyTheme(getInitialTheme());
+        themeToggle.addEventListener('click', function () {
+            var next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+            applyTheme(next);
+            safeSet('theme', next);
+        });
+
+        /* ========== 读取通知（时间新到旧） ========== */
+        var noticeList = document.getElementById('noticeList');
+
+        function el(tag, cls, text) {
+            var n = document.createElement(tag);
+            if (cls) n.className = cls;
+            if (text !== undefined) n.textContent = text; // 纯文本，防注入
+            return n;
+        }
+
+        function formatTime(s) {
+            var d = new Date(s);
+            if (isNaN(d.getTime())) return s || '';
+            return d.toLocaleString('zh-CN', {
+                year: 'numeric', month: '2-digit', day: '2-digit',
+                hour: '2-digit', minute: '2-digit', hour12: false
+            });
+        }
+
+        async function loadNotices() {
+            noticeList.innerHTML = '';
+            noticeList.appendChild(el('div', 'empty', '正在加载通知…'));
+            try {
+                var res = await fetch(
+                    SUPABASE_URL + '/rest/v1/notice?select=username,text,time&order=time.desc',
+                    {
+                        headers: {
+                            'apikey': ANON_KEY,
+                            'Authorization': 'Bearer ' + ANON_KEY
+                        }
+                    }
+                );
+                if (!res.ok) throw new Error('读取失败：' + (await res.text()));
+                var rows = await res.json();
+
+                noticeList.innerHTML = '';
+                if (!rows.length) {
+                    noticeList.appendChild(el('div', 'empty', '还没有通知，快来发布第一条吧～'));
+                    return;
+                }
+
+                rows.forEach(function (r) {
+                    var item = el('div', 'notice-item');
+
+                    var head = el('div', 'notice-head');
+                    var author = el('span', 'notice-author');
+                    author.appendChild(el('span', 'dot'));
+                    author.appendChild(document.createTextNode(realNameOf(r.username)));
+                    head.appendChild(author);
+                    head.appendChild(el('span', 'notice-time', formatTime(r.time)));
+
+                    item.appendChild(head);
+                    item.appendChild(el('div', 'notice-text', r.text || ''));
+                    noticeList.appendChild(item);
+                });
+            } catch (err) {
+                noticeList.innerHTML = '';
+                noticeList.appendChild(el('div', 'empty', '❌ 加载失败：' + err.message));
+            }
+        }
+
+        loadNotices();
+        document.getElementById('refreshBtn').addEventListener('click', loadNotices);
+
+        /* ========== 字数统计 ========== */
+        var textarea = document.getElementById('noticeText');
+        var charCount = document.getElementById('charCount');
+        textarea.addEventListener('input', function () {
+            charCount.textContent = textarea.value.length;
+        });
+
+        /* ========== 滑块人机验证 ========== */
+        var captchaPassed = false;
+        var submitBtn = document.getElementById('submitBtn');
+        var formMsg = document.getElementById('formMsg');
+
+        (function () {
+            var captcha = document.getElementById('sliderCaptcha');
+            var track   = captcha.querySelector('.slider-track');
+            var thumb   = document.getElementById('sliderThumb');
+            var fill    = document.getElementById('sliderFill');
+            var label   = document.getElementById('sliderLabel');
+
+            var THUMB_W = 40, PAD = 3;
+            var dragging = false;
+            var startX = 0, curX = 0;
+            var moveCount = 0, startTime = 0;
+
+            function trackMax() { return track.clientWidth - THUMB_W - PAD * 2; }
+
+            function setPos(x) {
+                curX = Math.max(0, Math.min(x, trackMax()));
+                thumb.style.left = (PAD + curX) + 'px';
+                fill.style.width = (PAD + curX + THUMB_W / 2) + 'px';
+            }
+
+            function reset() {
+                captchaPassed = false;
+                captcha.classList.remove('passed', 'failed');
+                label.textContent = '按住滑块，拖动到最右侧 →';
+                thumb.textContent = '→';
+                setPos(0);
+                submitBtn.disabled = true;
+            }
+
+            function pass() {
+                captchaPassed = true;
+                captcha.classList.remove('failed');
+                captcha.classList.add('passed');
+                setPos(trackMax());
+                thumb.textContent = '✓';
+                label.textContent = '验证通过';
+                submitBtn.disabled = false;
+            }
+
+            function fail(msg) {
+                captchaPassed = false;
+                captcha.classList.remove('passed');
+                captcha.classList.add('failed');
+                label.textContent = msg || '验证失败，请重试';
+                thumb.textContent = '→';
+                submitBtn.disabled = true;
+                setTimeout(reset, 900);
+            }
+
+            function getPoint(e) {
+                if (e.touches && e.touches[0]) return { x: e.touches[0].clientX };
+                return { x: e.clientX };
+            }
+
+            function onDown(e) {
+                if (captchaPassed) return;
+                dragging = true;
+                moveCount = 0;
+                startTime = Date.now();
+                var p = getPoint(e);
+                startX = p.x - curX;
+                e.preventDefault();
+            }
+
+            function onMove(e) {
+                if (!dragging) return;
+                var p = getPoint(e);
+                moveCount++;
+                setPos(p.x - startX);
+                e.preventDefault();
+            }
+
+            function onUp() {
+                if (!dragging) return;
+                dragging = false;
+                var elapsed = Date.now() - startTime;
+                var max = trackMax();
+                var diff = Math.abs(curX - max);
+
+                if (diff <= 3 && moveCount >= 4 && elapsed >= 150) {
+                    pass();
+                } else if (diff <= 3) {
+                    fail('操作异常，请重试');
+                } else if (diff <= max * 0.15) {
+                    fail('差一点，请拖到最右侧');
+                } else {
+                    reset();
+                }
+            }
+
+            thumb.addEventListener('mousedown', onDown);
+            document.addEventListener('mousemove', onMove);
+            document.addEventListener('mouseup', onUp);
+
+            thumb.addEventListener('touchstart', onDown, { passive: false });
+            document.addEventListener('touchmove', onMove, { passive: false });
+            document.addEventListener('touchend', onUp);
+
+            window.__resetCaptcha = reset;
+        })();
+
+        /* ========== 发布通知 ========== */
+        function setMsg(text, type) {
+            formMsg.textContent = text || '';
+            formMsg.className = 'form-msg' + (type ? ' ' + type : '');
+        }
+
+        if (canPublish) {
+            publishForm.addEventListener('submit', async function (e) {
+                e.preventDefault();
+
+                if (!captchaPassed) { setMsg('请先完成滑块验证', 'err'); return; }
+
+                var text = textarea.value.trim();
+                if (!text) { setMsg('请先输入通知内容', 'err'); textarea.focus(); return; }
+
+                // 自己拼接主键（从本地存储解析后再拼回去，保证格式一致）
+                var c = parseComposite(currentUsername);
+                var composed = (c.login && c.real)
+                    ? buildComposite(c.login, c.real)
+                    : currentUsername;
+
+                var payload = {
+                    username: composed,             // 用户名_0真实姓名0_
+                    text: text,                     // 纯文本
+                    time: new Date().toISOString()  // timestamptz
+                };
+
+                submitBtn.disabled = true;
+                setMsg('发布中…');
+
+                try {
+                    var res = await fetch(SUPABASE_URL + '/rest/v1/notice', {
+                        method: 'POST',
+                        headers: {
+                            'apikey': ANON_KEY,
+                            'Authorization': 'Bearer ' + ANON_KEY,
+                            'Content-Type': 'application/json',
+                            'Prefer': 'return=minimal'
+                        },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (!res.ok) throw new Error(await res.text());
+
+                    textarea.value = '';
+                    charCount.textContent = '0';
+                    setMsg('✅ 发布成功', 'ok');
+                    if (window.__resetCaptcha) window.__resetCaptcha();
+                    await loadNotices();
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                } catch (err) {
+                    setMsg('❌ 发布失败：' + err.message, 'err');
+                    submitBtn.disabled = !captchaPassed;
+                }
+            });
+        }
+    </script>
+</body>
+</html>
