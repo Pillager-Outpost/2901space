@@ -127,6 +127,26 @@
         border-color: var(--btn-bg);
     }
 
+    /* 登录后在顶栏显示的用户名徽章 */
+    .topbar-btn.user-badge {
+        background: var(--highlight-bg);
+        color: var(--highlight-text);
+        border-color: var(--highlight-text);
+        max-width: 42vw;
+        overflow: hidden;
+        gap: 6px;
+    }
+    .topbar-btn.user-badge:hover {
+        background: var(--accent);
+        color: #fff;
+        border-color: var(--accent);
+    }
+    .topbar-btn.user-badge .user-name {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
     .container { max-width: 820px; margin: 0 auto; }
 
     @keyframes fadeUp {
@@ -552,6 +572,7 @@
         .topbar-brand { font-size: 0.9em; }
         .topbar-actions { gap: 6px; }
         .topbar-btn { padding: 6px 12px; font-size: 0.8em; }
+        .topbar-btn.user-badge { max-width: 46vw; }
         .card { padding: 22px 18px; }
         .hero { font-size: 1.9em; }
         .subtitle { font-size: 1.1em; }
@@ -571,8 +592,9 @@
         <a class="topbar-brand" href="https://pillager-outpost.github.io/2901space/">2901 Space</a>
         <div class="topbar-actions">
             <a class="topbar-btn" href="https://pillager-outpost.github.io/2901space/review_feedback.html">审核状态</a>
-            <a class="topbar-btn" href="https://pillager-outpost.github.io/2901space/login.html">登录</a>
-            <a class="topbar-btn primary" href="https://pillager-outpost.github.io/2901space/signin.html">注册</a>
+            <a class="topbar-btn user-badge" id="userBadge" href="https://pillager-outpost.github.io/2901space/home.html" title="进入我的主页" style="display:none;">👤 <span class="user-name" id="topbarName"></span></a>
+            <a class="topbar-btn" id="loginBtn" href="https://pillager-outpost.github.io/2901space/login.html">登录</a>
+            <a class="topbar-btn primary" id="signinBtn" href="https://pillager-outpost.github.io/2901space/signin.html">注册</a>
         </div>
     </div>
 
@@ -683,6 +705,35 @@
     <script>
         function safeGet(k){ try { return localStorage.getItem(k); } catch(e){ return null; } }
         function safeSet(k,v){ try { localStorage.setItem(k,v); } catch(e){} }
+
+        /* ========== 登录态：顶栏显示 用户名（真实姓名），点击进入 home.html ========== */
+        (function () {
+            var token = safeGet('token');
+            var username = safeGet('username');       // 完整拼接主键
+            var displayName = safeGet('displayName'); // 真实姓名
+            var badge = document.getElementById('userBadge');
+            var nameEl = document.getElementById('topbarName');
+            var loginBtn = document.getElementById('loginBtn');
+            var signinBtn = document.getElementById('signinBtn');
+
+            if (!token || !username) return; // 未登录，保留“登录 / 注册”
+
+            function parseComposite(s) {
+                var m = /^(.*)_0(.*)0_$/.exec(s || '');
+                return m ? { login: m[1], real: m[2] } : { login: s || '', real: '' };
+            }
+
+            var cur = parseComposite(username);
+            var real = cur.real || displayName || '';
+            nameEl.textContent = cur.login
+                ? cur.login + '（' + real + '）'
+                : (real || username);
+
+            badge.style.display = 'inline-flex';
+            badge.href = 'https://pillager-outpost.github.io/2901space/home.html';
+            loginBtn.style.display = 'none';
+            signinBtn.style.display = 'none';
+        })();
 
         var backToTop = document.getElementById('backToTop');
         window.addEventListener('scroll', function () {
