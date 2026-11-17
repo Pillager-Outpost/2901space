@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>2901 图库 · 2901 Space</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🖼️</text></svg>">
+<style>
+    :root {
+        --bg1: #E0F2FE;
+        --bg2: #F0FDF4;
+        --card: rgba(255, 255, 255, 0.9);
+        --text: #1E293B;
+        --text-muted: #64748B;
+        --border: rgba(203, 213, 225, 0.6);
+        --accent: #0EA5E9;
+        --btn-bg: #0EA5E9;
+        --btn-text: #fff;
+        --shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+        --input-bg: #fff;
+        --error: #ef4444;
+        --t-color: 0.3s ease-out;
+    }
+    html[data-theme="dark"] {
+        --bg1: #0B1120;
+        --bg2: #111827;
+        --card: rgba(30, 41, 59, 0.9);
+        --text: #E2E8F0;
+        --text-muted: #94A3B8;
+        --border: rgba(51, 65, 85, 0.8);
+        --accent: #38BDF8;
+        --btn-bg: #38BDF8;
+        --btn-text: #0B1120;
+        --shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+        --input-bg: #1C2228;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+        background: linear-gradient(160deg, var(--bg1), var(--bg2));
+        background-attachment: fixed;
+        color: var(--text);
+        font-family: "华文中宋", "STZhongsong", "SimSun", serif;
+        line-height: 1.8;
+        min-height: 100vh;
+        padding: 40px 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        transition: background var(--t-color), color var(--t-color);
+    }
+
+    .container {
+        max-width: 600px;
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
+        animation: fadeUp 0.5s ease both;
+    }
+
+    @keyframes fadeUp {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 10px;
+    }
+    .header h1 { font-size: 1.8em; font-weight: normal; }
+    .header a {
+        color: var(--accent);
+        text-decoration: none;
+        font-size: 0.95em;
+        display: flex; align-items: center; gap: 6px;
+    }
+    .header a:hover { text-decoration: underline; }
+
+    .input-card {
+        background: var(--card);
+        backdrop-filter: blur(12px);
+        border: 1px solid var(--border);
+        border-radius: 18px;
+        padding: 24px;
+        box-shadow: var(--shadow);
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .input-group {
+        display: flex;
+        gap: 12px;
+    }
+
+    input[type="text"] {
+        flex: 1;
+        padding: 12px 16px;
+        font-size: 1em;
+        font-family: inherit;
+        color: var(--text);
+        background: var(--input-bg);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        outline: none;
+        transition: border-color 0.2s;
+    }
+    input[type="text"]:focus { border-color: var(--accent); }
+
+    .btn {
+        padding: 12px 24px;
+        font-size: 1em;
+        font-family: inherit;
+        color: var(--btn-text);
+        background: var(--btn-bg);
+        border: none;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: transform 0.15s, box-shadow 0.2s;
+        box-shadow: 0 4px 14px rgba(14, 165, 233, 0.25);
+        white-space: nowrap;
+    }
+    .btn:hover { transform: translateY(-2px); box-shadow: 0 8px 22px rgba(14, 165, 233, 0.35); }
+
+    .msg { font-size: 0.95em; text-align: center; }
+    .msg.error { color: var(--error); }
+
+    /* 展示区 */
+    .photo-card {
+        background: var(--card);
+        backdrop-filter: blur(12px);
+        border: 1px solid var(--border);
+        border-radius: 18px;
+        padding: 24px;
+        box-shadow: var(--shadow);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 300px;
+        position: relative;
+        flex-direction: column; /* 让底部的按钮能在下方排列 */
+        gap: 20px;
+    }
+
+    .img-wrapper {
+        width: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    #photoImg {
+        max-width: 100%;
+        max-height: 600px;
+        border-radius: 8px;
+        object-fit: contain;
+        display: none; /* 默认隐藏，加载成功才显示 */
+    }
+
+    .placeholder {
+        text-align: center;
+        color: var(--text-muted);
+        font-size: 1.1em;
+    }
+    .placeholder .icon {
+        font-size: 3em;
+        display: block;
+        margin-bottom: 10px;
+    }
+
+    /* 加载动画 */
+    .loader {
+        display: none;
+        border: 4px solid var(--border);
+        border-top: 4px solid var(--accent);
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        animation: spin 1s linear infinite;
+    }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+    /* 底部操作按钮 */
+    .action-bar {
+        display: none; /* 默认隐藏，加载成功才显示 */
+        gap: 12px;
+        width: 100%;
+        justify-content: center;
+    }
+    .action-bar .btn {
+        flex: 1;
+        padding: 10px;
+        font-size: 0.95em;
+        text-align: center;
+    }
+    .btn.outline {
+        background: transparent;
+        border: 1px solid var(--border);
+        color: var(--text);
+        box-shadow: none;
+    }
+    .btn.outline:hover {
+        background: var(--bg-hover);
+        border-color: var(--accent);
+    }
+
+    #themeToggle {
+        position: fixed;
+        top: 20px; right: 20px;
+        width: 44px; height: 44px;
+        border-radius: 50%;
+        border: 1px solid var(--border);
+        background: var(--card);
+        color: var(--text);
+        font-size: 1.2em;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: var(--shadow);
+        transition: transform 0.2s;
+        z-index: 999;
+    }
+    #themeToggle:hover { transform: scale(1.08); }
+
+    @media (max-width: 600px) {
+        .input-group { flex-direction: column; }
+        .btn { width: 100%; }
+        .photo-card { padding: 16px; }
+        .action-bar { flex-direction: column; }
+    }
+</style>
+</head>
+<body>
+
+    <button id="themeToggle" title="切换深色/浅色模式">🌙</button>
+
+    <div class="container">
+        <div class="header">
+            <h1>🖼️ 2901 图库</h1>
+            <a href="https://pillager-outpost.github.io/2901space/home.html">← 返回主页</a>
+        </div>
+
+        <div class="input-card">
+            <div class="input-group">
+                <input type="text" id="photoId" placeholder="请输入图片编号（例如：1）" inputmode="numeric" autocomplete="off">
+                <button class="btn" id="searchBtn">获取照片</button>
+            </div>
+            <p class="msg" id="msg"></p>
+        </div>
+
+        <div class="photo-card">
+            <div class="placeholder" id="placeholder">
+                <span class="icon">🔍</span>
+                输入编号，获取你的回忆
+            </div>
+            <div class="loader" id="loader"></div>
+            
+            <div class="img-wrapper">
+                <img id="photoImg" alt="图片">
+            </div>
+
+            <!-- 底部操作按钮 -->
+            <div class="action-bar" id="actionBar">
+                <button class="btn outline" id="copyBtn">🔗 复制链接</button>
+                <a class="btn" id="downloadBtn" download>📥 下载图片</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function safeGet(k){ try { return localStorage.getItem(k); } catch(e){ return null; } }
+        function safeSet(k,v){ try { localStorage.setItem(k,v); } catch(e){} }
+
+        // 主题控制
+        var themeToggle = document.getElementById('themeToggle');
+        var root = document.documentElement;
+        function applyTheme(t) {
+            root.setAttribute('data-theme', t);
+            if (themeToggle) themeToggle.textContent = t === 'dark' ? '☀️' : '🌙';
+        }
+        function getInitialTheme() {
+            var s = safeGet('theme');
+            if (s === 'dark' || s === 'light') return s;
+            try { return matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'; }
+            catch(e){ return 'light'; }
+        }
+        applyTheme(getInitialTheme());
+        if (themeToggle) {
+            themeToggle.addEventListener('click', function () {
+                var next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+                applyTheme(next);
+                safeSet('theme', next);
+            });
+        }
+
+        // ========== 图片加载逻辑 ==========
+        var BASE_URL = 'https://pillager-outpost.github.io/2901space/photos/';
+        var photoId = document.getElementById('photoId');
+        var searchBtn = document.getElementById('searchBtn');
+        var msg = document.getElementById('msg');
+        var photoImg = document.getElementById('photoImg');
+        var placeholder = document.getElementById('placeholder');
+        var loader = document.getElementById('loader');
+        var actionBar = document.getElementById('actionBar');
+        var downloadBtn = document.getElementById('downloadBtn');
+        var copyBtn = document.getElementById('copyBtn');
+        
+        var currentLoadId = 0;
+        var currentImageUrl = '';
+
+        function showMsg(text, type) {
+            msg.textContent = text;
+            msg.className = 'msg ' + (type || '');
+        }
+
+        function resetUI() {
+            photoImg.style.display = 'none';
+            placeholder.style.display = 'block';
+            loader.style.display = 'none';
+            actionBar.style.display = 'none';
+            currentImageUrl = '';
+        }
+
+        function loadPhoto() {
+            let id = photoId.value.trim();
+            if (!id) {
+                showMsg('请输入图片编号', 'error');
+                return;
+            }
+
+            id = id.replace(/\s+/g, '');
+            showMsg('', '');
+            
+            // 准备加载状态
+            placeholder.style.display = 'none';
+            photoImg.style.display = 'none';
+            actionBar.style.display = 'none';
+            loader.style.display = 'block';
+
+            var requestId = ++currentLoadId;
+            var url = BASE_URL + id + '.png';
+
+            var tempImg = new Image();
+            
+            tempImg.onload = function() {
+                if (requestId !== currentLoadId) return;
+                loader.style.display = 'none';
+                
+                currentImageUrl = url;
+                photoImg.src = url;
+                photoImg.style.display = 'block';
+                
+                // 配置下载按钮
+                downloadBtn.href = url;
+                downloadBtn.download = id + '.png'; // 默认下载文件名
+                
+                // 显示底部按钮
+                actionBar.style.display = 'flex';
+                showMsg('');
+            };
+
+            tempImg.onerror = function() {
+                if (requestId !== currentLoadId) return;
+                loader.style.display = 'none';
+                resetUI();
+                showMsg('未找到编号为 ' + id + ' 的图片，请检查编号是否正确。', 'error');
+            };
+
+            tempImg.src = url;
+        }
+
+        searchBtn.addEventListener('click', loadPhoto);
+        photoId.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') loadPhoto();
+        });
+
+        // 复制链接逻辑
+        copyBtn.addEventListener('click', function() {
+            if (!currentImageUrl) return;
+
+            var textToCopy = currentImageUrl;
+            var originalText = copyBtn.textContent;
+
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(textToCopy).then(function() {
+                    copyBtn.textContent = '✅ 已复制';
+                    setTimeout(function() { copyBtn.textContent = originalText; }, 1500);
+                }).catch(function() {
+                    fallbackCopy(textToCopy, originalText);
+                });
+            } else {
+                fallbackCopy(textToCopy, originalText);
+            }
+        });
+
+        function fallbackCopy(text, originalText) {
+            var ta = document.createElement('textarea');
+            ta.value = text;
+            ta.style.position = 'fixed';
+            ta.style.opacity = '0';
+            document.body.appendChild(ta);
+            ta.select();
+            try {
+                document.execCommand('copy');
+                copyBtn.textContent = '✅ 已复制';
+                setTimeout(function() { copyBtn.textContent = originalText; }, 1500);
+            } catch (e) {
+                console.warn('复制失败', e);
+                alert('复制失败，请手动复制链接：' + text);
+            }
+            document.body.removeChild(ta);
+        }
+    </script>
+</body>
+</html>
