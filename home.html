@@ -56,6 +56,22 @@
 
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
+    /* ===== 主题切换瞬间：关掉昂贵效果，避免逐帧重绘卡顿 ===== */
+    html.theme-switching *,
+    html.theme-switching *::before,
+    html.theme-switching *::after {
+        transition: none !important;
+    }
+    html.theme-switching .header-card,
+    html.theme-switching .main-card,
+    html.theme-switching .modal-box {
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+    }
+    html.theme-switching .theme-tab-thumb {
+        transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+    }
+
     body {
         background: linear-gradient(160deg, var(--bg1), var(--bg2));
         background-attachment: fixed;
@@ -67,8 +83,7 @@
         display: flex;
         flex-direction: column;
         align-items: center;
-        transition: background var(--t-color), color var(--t-color);
-        will-change: background, color;
+        transition: color var(--t-color);
         overflow-x: hidden;
     }
 
@@ -406,14 +421,13 @@
             document.getElementById('displayName').textContent = displayName;
         }
 
-        // ========== 主题控制 ==========
+        // ========== 主题控制（优化版） ==========
         var root = document.documentElement;
         var themeTab = document.getElementById('themeTab');
         var tabLight = document.getElementById('tabLight');
         var tabDark = document.getElementById('tabDark');
 
-        function applyTheme(t) {
-            root.setAttribute('data-theme', t);
+        function syncThemeTab(t) {
             if (t === 'dark') {
                 tabDark.classList.add('active');
                 tabLight.classList.remove('active');
@@ -422,23 +436,43 @@
                 tabDark.classList.remove('active');
             }
         }
+
+        function applyTheme(t) {
+            root.setAttribute('data-theme', t);
+            syncThemeTab(t);
+        }
+
         function getInitialTheme() {
             var s = safeGet('theme');
             if (s === 'dark' || s === 'light') return s;
             try { return matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'; }
             catch(e){ return 'light'; }
         }
+
         applyTheme(getInitialTheme());
 
+        // 切换时先禁用过渡/模糊，切完两帧再恢复，避免整页逐帧重绘
+        function switchTheme(t) {
+            root.classList.add('theme-switching');
+            applyTheme(t);
+            safeSet('theme', t);
+            requestAnimationFrame(function () {
+                requestAnimationFrame(function () {
+                    root.classList.remove('theme-switching');
+                });
+            });
+        }
+
         themeTab.addEventListener('click', function (e) {
+            var next;
             if (e.target === tabLight || tabLight.contains(e.target)) {
-                applyTheme('light'); safeSet('theme', 'light');
+                next = 'light';
             } else if (e.target === tabDark || tabDark.contains(e.target)) {
-                applyTheme('dark'); safeSet('theme', 'dark');
+                next = 'dark';
             } else {
-                var next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
-                applyTheme(next); safeSet('theme', next);
+                next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
             }
+            switchTheme(next);
         });
 
         // ========== 动态问候语 ==========
@@ -587,6 +621,9 @@
         });
 
         function createBubble() {
+            // 上限保护：避免长时间开页面后泡泡越积越多，拖慢换肤重绘
+            if (bubbleContainer.children.length >= 40) return;
+
             var b = document.createElement('div');
             b.classList.add('bubble');
 
@@ -631,7 +668,7 @@
             bubbleContainer.appendChild(b);
         }
 
-        setInterval(createBubble, 400); 
+        setInterval(createBubble, 600); 
         for(let i=0; i<5; i++) setTimeout(createBubble, i * 200);
     </script>
 </body>
