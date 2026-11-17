@@ -291,12 +291,16 @@
         var boardMsg = document.getElementById('boardMsg');
         function setBoardMsg(text) { boardMsg.textContent = text || ''; }
 
+        // 重绘后需要恢复焦点的题号输入框所属板块 id（一次性）
+        var refocusGroupId = null;
+
         function addBoard() {
             var name = boardNameInput.value.trim();
             if (!name) { setBoardMsg('请输入板块名称'); boardNameInput.focus(); return; }
-            if (SURVEY_DATA.groups.some(function (g) { return g.name === name; })) { setBoardMsg('板块名称已存在'); return; }
+            if (SURVEY_DATA.groups.some(function (g) { return g.name === name; })) { setBoardMsg('板块名称已存在'); boardNameInput.focus(); return; }
             SURVEY_DATA.groups.push({ id: newId(), name: name, questions: [] });
             boardNameInput.value = ''; setBoardMsg(''); renderBoards();
+            boardNameInput.focus(); // 回车添加板块后，光标回到板块名称输入框
         }
         document.getElementById('addBoardBtn').addEventListener('click', addBoard);
         boardNameInput.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); addBoard(); } });
@@ -337,14 +341,17 @@
                 var addRow = el('div', 'add-row');
                 var input = el('input', 'text-input');
                 input.type = 'text'; input.placeholder = '题号，例如 4(1)，回车添加'; input.autocomplete = 'off';
+                input.setAttribute('data-group-id', group.id); // 标记所属板块，重绘后据此恢复光标
                 var addOpt = el('button', 'mini-btn', '＋ 添加选项');
                 addOpt.type = 'button';
                 var optMsg = el('div', 'inline-msg');
                 function doAdd() {
                     var v = input.value.trim();
                     if (!v) { optMsg.textContent = '请输入题号'; input.focus(); return; }
-                    if (group.questions.indexOf(v) !== -1) { optMsg.textContent = '该题号已存在'; return; }
-                    group.questions.push(v); input.value = ''; optMsg.textContent = ''; renderBoards();
+                    if (group.questions.indexOf(v) !== -1) { optMsg.textContent = '该题号已存在'; input.focus(); return; }
+                    group.questions.push(v); input.value = ''; optMsg.textContent = '';
+                    refocusGroupId = group.id; // 记住刚才使用的输入框
+                    renderBoards();
                 }
                 addOpt.addEventListener('click', doAdd);
                 input.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); doAdd(); } });
@@ -365,6 +372,15 @@
                 boardList.appendChild(card);
             });
             updateStats();
+
+            // 重绘后把光标放回刚才使用的题号输入框
+            if (refocusGroupId !== null) {
+                var gid = refocusGroupId; refocusGroupId = null;
+                var inputs = boardList.querySelectorAll('input[data-group-id]');
+                for (var i = 0; i < inputs.length; i++) {
+                    if (inputs[i].getAttribute('data-group-id') === gid) { inputs[i].focus(); break; }
+                }
+            }
         }
 
         /* ========== 载入当前统计作为编辑起点 ========== */
