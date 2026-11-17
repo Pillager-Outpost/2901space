@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>修改信息 · 2901 Space</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏝️</text></svg>">
+<style>
+    :root {
+        --bg1: #E0F2FE;
+        --bg2: #F0FDF4;
+        --card: rgba(255, 255, 255, 0.9);
+        --text: #1E293B;
+        --text-muted: #64748B;
+        --border: rgba(203, 213, 225, 0.6);
+        --accent: #0EA5E9;
+        --btn-bg: #0EA5E9;
+        --btn-text: #fff;
+        --shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+        --shadow-hover: 0 12px 32px rgba(14, 165, 233, 0.15);
+        --bg-hover: #f8fafc;
+        --input-bg: rgba(255, 255, 255, 0.5);
+        --highlight-bg: #BAE6FD;
+        --highlight-text: #0369A1;
+        --notice-bg: rgba(254, 249, 195, 0.7);
+        --notice-border: #EAB308;
+        --ok: #0a7d32;
+        --err: #c62828;
+        --t-color: 0.3s ease-out;
+    }
+    html[data-theme="dark"] {
+        --bg1: #0B1120;
+        --bg2: #111827;
+        --card: rgba(30, 41, 59, 0.9);
+        --text: #E2E8F0;
+        --text-muted: #94A3B8;
+        --border: rgba(51, 65, 85, 0.8);
+        --accent: #38BDF8;
+        --btn-bg: #38BDF8;
+        --btn-text: #0B1120;
+        --shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+        --shadow-hover: 0 12px 32px rgba(56, 189, 248, 0.2);
+        --bg-hover: #1e293b;
+        --input-bg: rgba(255, 255, 255, 0.06);
+        --highlight-bg: #0C4A6E;
+        --highlight-text: #7DD3FC;
+        --notice-bg: rgba(42, 36, 16, 0.7);
+        --notice-border: #EAB308;
+        --ok: #4ade80;
+        --err: #f87171;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+        background: linear-gradient(160deg, var(--bg1), var(--bg2));
+        background-attachment: fixed;
+        color: var(--text);
+        font-family: "华文中宋", "STZhongsong", "SimSun", serif;
+        line-height: 1.8;
+        min-height: 100vh;
+        padding: 88px 20px 48px;
+        transition: background var(--t-color), color var(--t-color);
+        overflow-x: hidden;
+    }
+
+    .container {
+        max-width: 560px;
+        margin: 0 auto;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        animation: fadeUp 0.5s ease both;
+    }
+
+    @keyframes fadeUp {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ========== 顶部返回 ========== */
+    .back-home {
+        position: fixed;
+        top: 20px; left: 20px;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 10px 18px;
+        font-size: 0.95em;
+        font-family: inherit;
+        color: var(--text);
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        text-decoration: none;
+        box-shadow: var(--shadow);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        transition: background 0.2s, transform 0.15s, color 0.2s, border-color 0.2s;
+        z-index: 1000;
+    }
+    .back-home:hover {
+        background: var(--btn-bg);
+        color: var(--btn-text);
+        border-color: var(--btn-bg);
+        transform: translateY(-2px);
+    }
+
+    /* ========== 主题按钮 ========== */
+    #themeToggle {
+        position: fixed;
+        top: 20px; right: 20px;
+        width: 44px; height: 44px;
+        border-radius: 50%;
+        border: 1px solid var(--border);
+        background: var(--card);
+        color: var(--text);
+        font-size: 1.2em;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: var(--shadow);
+        backdrop-filter: blur(8px);
+        transition: background 0.2s, transform 0.2s, border-color 0.2s;
+        z-index: 999;
+    }
+    #themeToggle:hover { transform: scale(1.08); border-color: var(--accent); }
+
+    /* ========== 卡片 ========== */
+    .card {
+        background: var(--card);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid var(--border);
+        border-radius: 18px;
+        padding: 26px 28px;
+        box-shadow: var(--shadow);
+        transition: background var(--t-color), border-color var(--t-color), box-shadow 0.3s;
+    }
+
+    .page-header { text-align: center; margin-bottom: 6px; }
+    .page-header h1 {
+        font-size: 2em;
+        font-weight: normal;
+        line-height: 1.3;
+        margin-bottom: 4px;
+    }
+    .page-header .sub {
+        font-size: 1em;
+        color: var(--text-muted);
+        letter-spacing: 0.04em;
+    }
+
+    .highlight {
+        background: var(--highlight-bg);
+        background-repeat: no-repeat;
+        background-size: 100% 40%;
+        background-position: 0 88%;
+        padding: 0 8px;
+        color: var(--highlight-text);
+        transition: background var(--t-color), color var(--t-color);
+    }
+
+    .account-badge {
+        margin-top: 18px;
+        text-align: center;
+        font-size: 0.95em;
+        color: var(--text-muted);
+        padding: 10px 14px;
+        border: 1px dashed var(--border);
+        border-radius: 12px;
+        transition: border-color var(--t-color), color var(--t-color);
+    }
+    .account-badge strong { color: var(--accent); font-weight: bold; }
+
+    .section-title {
+        font-size: 1.05em;
+        font-weight: normal;
+        color: var(--accent);
+        letter-spacing: 0.2em;
+        margin-bottom: 18px;
+        transition: color var(--t-color);
+    }
+
+    /* ========== 表单 ========== */
+    .info-form { display: flex; flex-direction: column; gap: 16px; }
+
+    .field { display: flex; flex-direction: column; gap: 6px; }
+
+    .field label {
+        font-size: 0.95em;
+        color: var(--text);
+        display: flex;
+        align-items: baseline;
+        gap: 8px;
+        transition: color var(--t-color);
+    }
+    .field .req { color: var(--err); font-size: 0.9em; }
+
+    .field input {
+        width: 100%;
+        padding: 12px 16px;
+        font-size: 1.02em;
+        font-family: inherit;
+        color: var(--text);
+        background: var(--input-bg);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        outline: none;
+        backdrop-filter: blur(6px);
+        -webkit-backdrop-filter: blur(6px);
+        transition: border-color 0.2s, box-shadow 0.2s, background var(--t-color), color var(--t-color);
+    }
+    .field input:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.18);
+    }
+    .field input::placeholder { color: var(--text-muted); }
+    .field input:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    .form-msg {
+        font-size: 0.95em;
+        min-height: 1.5em;
+        margin: 2px 0 0;
+    }
+    .form-msg.ok { color: var(--ok); }
+    .form-msg.err { color: var(--err); }
+
+    .submit-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        width: 100%;
+        padding: 12px 24px;
+        font-size: 1.02em;
+        font-family: inherit;
+        color: var(--btn-text);
+        background: var(--btn-bg);
+        border: none;
+        border-radius: 10px;
+        cursor: pointer;
+        box-shadow: 0 4px 14px rgba(14, 165, 233, 0.25);
+        transition: transform 0.2s, box-shadow 0.2s, background var(--t-color), opacity 0.2s;
+    }
+    .submit-btn:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 22px rgba(14, 165, 233, 0.35);
+    }
+    .submit-btn:disabled { opacity: 0.5; cursor: not-allowed; box-shadow: none; transform: none; }
+
+    /* ========== 提示条 ========== */
+    .notice {
+        background: var(--notice-bg);
+        border-left: 4px solid var(--notice-border);
+        padding: 14px 18px;
+        border-radius: 0 10px 10px 0;
+        font-size: 0.95em;
+        color: var(--text-muted);
+        line-height: 1.7;
+    }
+    .notice strong { color: var(--text); font-weight: normal; }
+    .notice code {
+        font-family: "Consolas", "Courier New", monospace;
+        font-size: 0.9em;
+        color: var(--accent);
+        background: var(--bg-hover);
+        padding: 1px 5px;
+        border-radius: 5px;
+    }
+
+    /* ========== 成功弹窗 ========== */
+    .modal-overlay {
+        position: fixed; inset: 0;
+        background: rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(4px);
+        display: none; align-items: center; justify-content: center;
+        z-index: 1000; opacity: 0;
+        transition: opacity 0.3s ease;
+        padding: 24px;
+    }
+    .modal-overlay.show { display: flex; opacity: 1; }
+
+    .modal-box {
+        background: var(--card);
+        backdrop-filter: blur(12px);
+        border: 1px solid var(--border);
+        border-radius: 18px;
+        padding: 30px 26px;
+        width: 100%; max-width: 340px;
+        text-align: center;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        animation: popIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    @keyframes popIn {
+        from { transform: scale(0.85); opacity: 0; }
+        to { transform: scale(1); opacity: 1; }
+    }
+    .modal-emoji { font-size: 3em; display: block; margin-bottom: 10px; }
+    .modal-title { font-size: 1.35em; font-weight: normal; color: var(--accent); margin-bottom: 8px; }
+    .modal-desc { font-size: 0.95em; color: var(--text-muted); margin-bottom: 22px; line-height: 1.6; }
+    .modal-btn {
+        width: 100%;
+        padding: 10px 20px;
+        font-size: 1em;
+        font-family: inherit;
+        color: var(--btn-text);
+        background: var(--btn-bg);
+        border: none;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: transform 0.15s, background var(--t-color);
+    }
+    .modal-btn:hover { transform: translateY(-2px); }
+
+    @media (max-width: 600px) {
+        body { padding: 76px 14px 32px; }
+        .card { padding: 20px 18px; }
+        .page-header h1 { font-size: 1.6em; }
+        .page-header .sub { font-size: 0.95em; }
+        .back-home { top: 12px; left: 12px; padding: 8px 14px; font-size: 0.85em; }
+        #themeToggle { top: 12px; right: 12px; width: 38px; height: 38px; font-size: 1em; }
+    }
+</style>
+</head>
+<body>
+
+    <a class="back-home" href="https://pillager-outpost.github.io/2901space/home.html" title="返回用户主页">
+        <span>←</span> 返回
+    </a>
+    <button id="themeToggle" title="切换深色/浅色模式">🌙</button>
+
+    <div class="container">
+
+        <div class="card">
+            <div class="page-header">
+                <h1><span class="highlight">修改账号信息</span></h1>
+                <p class="sub">用户名、真实姓名和密码都可以改</p>
+            </div>
+            <div class="account-badge">当前账号：<strong id="currentUser">—</strong></div>
+        </div>
+
+        <div class="card">
+            <h2 class="section-title">账号安全</h2>
+            <form class="info-form" id="infoForm" autocomplete="off">
+                <div class="field">
+                    <label for="oldPassword">原密码 <span class="req">*</span></label>
+                    <input type="password" id="oldPassword" placeholder="请输入当前密码，用于校验身份" autocomplete="current-password">
+                </div>
+
+                <div class="field">
+                    <label for="newLogin">登录用户名</label>
+                    <input type="text" id="newLogin" placeholder="例如：liu_zhizhong" autocomplete="off" maxlength="20">
+                </div>
+
+                <div class="field">
+                    <label for="newReal">真实姓名</label>
+                    <input type="text" id="newReal" placeholder="例如：刘智中" autocomplete="off" maxlength="20">
+                </div>
+
+                <div class="field">
+                    <label for="newPassword">新密码 <span class="req" style="font-size:0.8em;color:var(--text-muted);font-weight:normal;">不修改请留空</span></label>
+                    <input type="password" id="newPassword" placeholder="至少 6 位" autocomplete="new-password">
+                </div>
+
+                <div class="field">
+                    <label for="confirmPassword">确认新密码</label>
+                    <input type="password" id="confirmPassword" placeholder="再输入一次新密码" autocomplete="new-password">
+                </div>
+
+                <p class="form-msg" id="formMsg"></p>
+
+                <button type="submit" class="submit-btn" id="submitBtn">保存修改</button>
+            </form>
+        </div>
+
+        <div class="card">
+            <div class="notice">
+                <strong>小提示：</strong><br>
+                账号由「登录用户名」和「真实姓名」拼成，形如 <code>liu_zhizhong_0刘智中0_</code>。<br>
+                登录用户名和真实姓名上方已经填好当前值，直接修改要改的部分即可。<br>
+                保存成功后会请你重新登录一次，请用新的用户名和密码登录。
+            </div>
+        </div>
+
+    </div>
+
+    <!-- 成功弹窗 -->
+    <div class="modal-overlay" id="doneModal">
+        <div class="modal-box">
+            <span class="modal-emoji">✨</span>
+            <h2 class="modal-title">修改成功</h2>
+            <p class="modal-desc" id="doneDesc">账号信息已更新，即将前往登录页…</p>
+            <button class="modal-btn" id="doneBtn">去登录</button>
+        </div>
+    </div>
+
+    <script>
+        function safeGet(k){ try { return localStorage.getItem(k); } catch(e){ return null; } }
+        function safeSet(k,v){ try { localStorage.setItem(k,v); } catch(e){} }
+        function safeRemove(k){ try { localStorage.removeItem(k); } catch(e){} }
+
+        /* ========== 配置 ========== */
+        var SUPABASE_URL = 'https://htufjnhmowvfocwukrft.supabase.co';
+        var ANON_KEY = 'sb_publishable_X5i03Y12PA5L71QARR9TIw_6FOlJpVr';
+
+        // 'edge' = 走 Edge Function 代理（密码校验在服务端做，推荐）
+        // 'rest' = 直接 PATCH /rest/v1/users（不建议，anon key 无法安全写库）
+        var API_MODE = 'edge';
+        var EDGE_FN  = 'change_info';
+
+        /* ========== 账号拼接解析 ========== */
+        // 形如：liu_zhizhong_0刘智中0_
+        function parseComposite(s) {
+            var m = /^(.*)_0(.*)0_$/.exec(s || '');
+            return m ? { login: m[1], real: m[2] } : { login: s || '', real: '' };
+        }
+        function buildComposite(login, real) {
+            return login + '_0' + real + '0_';
+        }
+
+        /* ========== 登录拦截 ========== */
+        var token = safeGet('token');
+        var username = safeGet('username'); // 这里存的是拼接后的完整主键
+        var cur = parseComposite(username);
+
+        if (!token || !username) {
+            window.location.href = 'https://pillager-outpost.github.io/2901space/login.html';
+        } else {
+            document.getElementById('currentUser').textContent =
+                cur.login + '（' + cur.real + '）';
+        }
+
+        /* ========== 主题 ========== */
+        var root = document.documentElement;
+        var themeToggle = document.getElementById('themeToggle');
+
+        function applyTheme(t) {
+            root.setAttribute('data-theme', t);
+            themeToggle.textContent = t === 'dark' ? '☀️' : '🌙';
+        }
+        function getInitialTheme() {
+            var s = safeGet('theme');
+            if (s === 'dark' || s === 'light') return s;
+            try { return matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'; }
+            catch(e){ return 'light'; }
+        }
+        applyTheme(getInitialTheme());
+        themeToggle.addEventListener('click', function () {
+            var next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+            applyTheme(next);
+            safeSet('theme', next);
+        });
+
+        /* ========== 元素 ========== */
+        var form = document.getElementById('infoForm');
+        var oldPwdInput = document.getElementById('oldPassword');
+        var newLoginInput = document.getElementById('newLogin');
+        var newRealInput  = document.getElementById('newReal');
+        var newPwdInput = document.getElementById('newPassword');
+        var confirmInput = document.getElementById('confirmPassword');
+        var formMsg = document.getElementById('formMsg');
+        var submitBtn = document.getElementById('submitBtn');
+        var doneModal = document.getElementById('doneModal');
+        var doneDesc = document.getElementById('doneDesc');
+        var doneBtn = document.getElementById('doneBtn');
+
+        // 预填当前登录名和真实姓名
+        newLoginInput.value = cur.login;
+        newRealInput.value  = cur.real;
+
+        function setMsg(text, type) {
+            formMsg.textContent = text || '';
+            formMsg.className = 'form-msg' + (type ? ' ' + type : '');
+        }
+
+        function setLoading(on) {
+            submitBtn.disabled = on;
+            submitBtn.textContent = on ? '保存中…' : '保存修改';
+        }
+
+        /* ========== 请求头 ========== */
+        function headers(extra) {
+            var h = {
+                'Content-Type': 'application/json',
+                'apikey': ANON_KEY,
+                'Authorization': 'Bearer ' + ANON_KEY
+            };
+            if (extra) for (var k in extra) h[k] = extra[k];
+            return h;
+        }
+
+        /* ========== 方式一：Edge Function 代理 ========== */
+        async function changeByEdge(payload) {
+            var res = await fetch(SUPABASE_URL + '/functions/v1/' + EDGE_FN, {
+                method: 'POST',
+                headers: headers(),
+                body: JSON.stringify(payload)
+            });
+
+            var data = null;
+            try { data = await res.json(); } catch(e) {}
+
+            if (!res.ok || !data || !data.ok) {
+                var reason = (data && (data.error || data.message)) || ('请求失败（' + res.status + '）');
+                throw new Error(reason);
+            }
+            return data;
+        }
+
+        /* ========== 方式二：直接 REST PATCH（备用） ========== */
+        async function restSelect(column, value) {
+            var res = await fetch(
+                SUPABASE_URL + '/rest/v1/users?' + column + '=eq.' + encodeURIComponent(value) + '&select=username,password',
+                { headers: headers() }
+            );
+            if (!res.ok) throw new Error('查询失败：' + (await res.text()));
+            return await res.json();
+        }
+
+        async function changeByRest(payload) {
+            var oldUser = payload.username;
+            var newUser = payload.newUsername;
+            var newPwd = payload.newPassword;
+
+            var rows = await restSelect('username', oldUser);
+            if (!rows.length) throw new Error('当前账号不存在，请重新登录');
+            if (rows[0].password !== payload.oldPassword) throw new Error('原密码不正确');
+
+            var patch = {};
+            if (newUser && newUser !== oldUser) {
+                var dup = await restSelect('username', newUser);
+                if (dup.length) throw new Error('这个用户名已经被占用了');
+                patch.username = newUser;
+            }
+            if (newPwd) patch.password = newPwd;
+            if (!patch.username && !patch.password) throw new Error('没有需要修改的内容');
+
+            var res = await fetch(
+                SUPABASE_URL + '/rest/v1/users?username=eq.' + encodeURIComponent(oldUser),
+                {
+                    method: 'PATCH',
+                    headers: headers({ 'Prefer': 'return=minimal' }),
+                    body: JSON.stringify(patch)
+                }
+            );
+            if (!res.ok) throw new Error('写入失败：' + (await res.text()));
+            return { ok: true, username: patch.username || oldUser };
+        }
+
+        /* ========== 表单提交 ========== */
+        form.addEventListener('submit', async function (e) {
+            e.preventDefault();
+
+            var oldPwd = oldPwdInput.value;
+            var newLogin = newLoginInput.value.trim();
+            var newReal  = newRealInput.value.trim();
+            var newPwd = newPwdInput.value;
+            var confirmPwd = confirmInput.value;
+
+            var finalLogin = newLogin || cur.login;
+            var finalReal  = newReal  || cur.real;
+            var composed   = buildComposite(finalLogin, finalReal);
+            var newUser    = (composed !== username) ? composed : '';
+
+            if (!oldPwd) { setMsg('请先输入原密码', 'err'); oldPwdInput.focus(); return; }
+            if (!newUser && !newPwd) { setMsg('用户名和姓名都没变，也没有填新密码', 'err'); return; }
+
+            if (newUser) {
+                if (finalLogin.length < 2 || finalLogin.length > 20) {
+                    setMsg('登录用户名需要 2–20 个字符', 'err'); newLoginInput.focus(); return;
+                }
+                if (/\s/.test(finalLogin)) {
+                    setMsg('登录用户名不能包含空格', 'err'); newLoginInput.focus(); return;
+                }
+                if (/_0|0_/.test(finalLogin)) {
+                    setMsg('登录用户名不能包含 _0 或 0_', 'err'); newLoginInput.focus(); return;
+                }
+                if (!finalReal) {
+                    setMsg('真实姓名不能为空', 'err'); newRealInput.focus(); return;
+                }
+                if (finalReal.length > 20 || /_0|0_/.test(finalReal)) {
+                    setMsg('真实姓名不能超过 20 字，且不能包含 _0 或 0_', 'err'); newRealInput.focus(); return;
+                }
+            }
+
+            if (newPwd) {
+                if (newPwd.length < 6) {
+                    setMsg('新密码至少需要 6 位', 'err'); newPwdInput.focus(); return;
+                }
+                if (newPwd !== confirmPwd) {
+                    setMsg('两次输入的新密码不一致', 'err'); confirmInput.focus(); return;
+                }
+            } else if (confirmPwd) {
+                setMsg('请先填写新密码', 'err'); newPwdInput.focus(); return;
+            }
+
+            var payload = {
+                username: username,
+                oldPassword: oldPwd,
+                newUsername: newUser || '',
+                newPassword: newPwd || ''
+            };
+
+            setLoading(true);
+            setMsg('正在保存…');
+
+            try {
+                var result = API_MODE === 'edge'
+                    ? await changeByEdge(payload)
+                    : await changeByRest(payload);
+
+                // 清空密码框
+                oldPwdInput.value = '';
+                newPwdInput.value = '';
+                confirmInput.value = '';
+                // 姓名框保留本次的新值
+                newLoginInput.value = finalLogin;
+                newRealInput.value  = finalReal;
+                setMsg('');
+
+                doneDesc.textContent = '账号信息已更新，请用新的用户名和密码重新登录。';
+                doneModal.classList.add('show');
+            } catch (err) {
+                setMsg('❌ ' + (err && err.message ? err.message : '修改失败，请稍后重试'), 'err');
+            } finally {
+                setLoading(false);
+            }
+        });
+
+        /* ========== 弹窗：清掉旧登录态，跳登录页 ========== */
+        function finishAndRelogin() {
+            safeRemove('token');
+            safeRemove('username');
+            safeRemove('displayName');
+            window.location.href = 'https://pillager-outpost.github.io/2901space/login.html';
+        }
+        doneBtn.addEventListener('click', finishAndRelogin);
+        doneModal.addEventListener('click', function (e) {
+            if (e.target === doneModal) finishAndRelogin();
+        });
+    </script>
+</body>
+</html>
