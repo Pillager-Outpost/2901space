@@ -22,8 +22,6 @@
         --input-bg: rgba(255, 255, 255, 0.5);
         --highlight-bg: #BAE6FD;
         --highlight-text: #0369A1;
-        --notice-bg: rgba(254, 249, 195, 0.7);
-        --notice-border: #EAB308;
         --ok: #0a7d32;
         --err: #c62828;
         --t-color: 0.3s ease-out;
@@ -44,8 +42,6 @@
         --input-bg: rgba(255, 255, 255, 0.06);
         --highlight-bg: #0C4A6E;
         --highlight-text: #7DD3FC;
-        --notice-bg: rgba(42, 36, 16, 0.7);
-        --notice-border: #EAB308;
         --ok: #4ade80;
         --err: #f87171;
     }
@@ -250,26 +246,6 @@
     }
     .submit-btn:disabled { opacity: 0.5; cursor: not-allowed; box-shadow: none; transform: none; }
 
-    /* ========== 提示条 ========== */
-    .notice {
-        background: var(--notice-bg);
-        border-left: 4px solid var(--notice-border);
-        padding: 14px 18px;
-        border-radius: 0 10px 10px 0;
-        font-size: 0.95em;
-        color: var(--text-muted);
-        line-height: 1.7;
-    }
-    .notice strong { color: var(--text); font-weight: normal; }
-    .notice code {
-        font-family: "Consolas", "Courier New", monospace;
-        font-size: 0.9em;
-        color: var(--accent);
-        background: var(--bg-hover);
-        padding: 1px 5px;
-        border-radius: 5px;
-    }
-
     /* ========== 成功弹窗 ========== */
     .modal-overlay {
         position: fixed; inset: 0;
@@ -351,12 +327,12 @@
 
                 <div class="field">
                     <label for="newLogin">登录用户名</label>
-                    <input type="text" id="newLogin" placeholder="例如：liu_zhizhong" autocomplete="off" maxlength="20">
+                    <input type="text" id="newLogin" placeholder="例如：liu_zhizhong" autocomplete="off" maxlength="32">
                 </div>
 
                 <div class="field">
                     <label for="newReal">真实姓名</label>
-                    <input type="text" id="newReal" placeholder="例如：刘智中" autocomplete="off" maxlength="20">
+                    <input type="text" id="newReal" placeholder="例如：刘智中" autocomplete="off" maxlength="32">
                 </div>
 
                 <div class="field">
@@ -373,15 +349,6 @@
 
                 <button type="submit" class="submit-btn" id="submitBtn">保存修改</button>
             </form>
-        </div>
-
-        <div class="card">
-            <div class="notice">
-                <strong>小提示：</strong><br>
-                账号由「登录用户名」和「真实姓名」拼成，形如 <code>liu_zhizhong_0刘智中0_</code>。<br>
-                登录用户名和真实姓名上方已经填好当前值，直接修改要改的部分即可。<br>
-                保存成功后会请你重新登录一次，请用新的用户名和密码登录。
-            </div>
         </div>
 
     </div>
@@ -568,8 +535,8 @@
             if (!newUser && !newPwd) { setMsg('用户名和姓名都没变，也没有填新密码', 'err'); return; }
 
             if (newUser) {
-                if (finalLogin.length < 2 || finalLogin.length > 20) {
-                    setMsg('登录用户名需要 2–20 个字符', 'err'); newLoginInput.focus(); return;
+                if (finalLogin.length < 2 || finalLogin.length > 32) {
+                    setMsg('登录用户名需要 2–32 个字符', 'err'); newLoginInput.focus(); return;
                 }
                 if (/\s/.test(finalLogin)) {
                     setMsg('登录用户名不能包含空格', 'err'); newLoginInput.focus(); return;
@@ -580,8 +547,8 @@
                 if (!finalReal) {
                     setMsg('真实姓名不能为空', 'err'); newRealInput.focus(); return;
                 }
-                if (finalReal.length > 20 || /_0|0_/.test(finalReal)) {
-                    setMsg('真实姓名不能超过 20 字，且不能包含 _0 或 0_', 'err'); newRealInput.focus(); return;
+                if (finalReal.length > 32 || /_0|0_/.test(finalReal)) {
+                    setMsg('真实姓名不能超过 32 字，且不能包含 _0 或 0_', 'err'); newRealInput.focus(); return;
                 }
             }
 
