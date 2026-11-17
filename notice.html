@@ -313,7 +313,7 @@
         var SUPABASE_URL = 'https://htufjnhmowvfocwukrft.supabase.co';
         var ANON_KEY     = 'sb_publishable_X5i03Y12PA5L71QARR9TIw_6FOlJpVr';
 
-        /* ========== 账号拼接解析（自己拼 / 自己拆） ========== */
+        /* ========== 账号拼接：拆 / 拼 ========== */
         // 主键形如：liu_zhizhong_0刘智中0_
         function parseComposite(s) {
             var m = /^(.*)_0(.*)0_$/.exec(s || '');
@@ -322,9 +322,11 @@
         function buildComposite(login, real) {
             return login + '_0' + real + '0_';
         }
-        function realNameOf(username) {
+        // 展示用：登录用户名（真实姓名）
+        function displayNameOf(username) {
             var c = parseComposite(username);
-            return c.real || (safeGet('displayName') || '') || username || '未知用户';
+            if (c.login && c.real) return c.login + '（' + c.real + '）';
+            return c.login || username || '未知用户';
         }
 
         /* ========== 登录态 ========== */
@@ -405,7 +407,7 @@
                     var head = el('div', 'notice-head');
                     var author = el('span', 'notice-author');
                     author.appendChild(el('span', 'dot'));
-                    author.appendChild(document.createTextNode(realNameOf(r.username)));
+                    author.appendChild(document.createTextNode(displayNameOf(r.username)));
                     head.appendChild(author);
                     head.appendChild(el('span', 'notice-time', formatTime(r.time)));
 
@@ -557,9 +559,8 @@
                     : currentUsername;
 
                 var payload = {
-                    username: composed,             // 用户名_0真实姓名0_
-                    text: text,                     // 纯文本
-                    time: new Date().toISOString()  // timestamptz
+                    username: composed,   // 用户名_0真实姓名0_
+                    text: text            // time 交给数据库 default now()
                 };
 
                 submitBtn.disabled = true;
