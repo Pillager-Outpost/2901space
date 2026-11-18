@@ -271,6 +271,65 @@
     }
     #themeToggle:hover { transform: scale(1.08); }
 
+    /* ========== 可拖动的放大镜（彩蛋 6） ========== */
+    #magnifier {
+        position: fixed;
+        left: 50%; bottom: 24px;
+        width: 96px; height: 100px;
+        transform: translateX(-50%);
+        z-index: 999;
+        cursor: grab;
+        touch-action: none;
+        user-select: none; -webkit-user-select: none;
+        transition: filter 0.25s;
+    }
+    #magnifier.dragging { cursor: grabbing; }
+    #magnifier.near-sun { filter: drop-shadow(0 0 16px rgba(253, 224, 71, 0.95)); }
+    .magnifier-lens {
+        position: absolute; top: 0; left: 0;
+        width: 72px; height: 72px;
+        border-radius: 50%;
+        border: 5px solid rgba(203, 213, 225, 0.95);
+        background:
+            radial-gradient(circle at 32% 28%, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.18) 38%, rgba(255,255,255,0.04) 65%, transparent 72%),
+            rgba(255, 255, 255, 0.16);
+        backdrop-filter: blur(1px) brightness(1.05);
+        -webkit-backdrop-filter: blur(1px) brightness(1.05);
+        box-shadow: inset 0 0 14px rgba(255,255,255,0.5), 0 6px 18px rgba(0,0,0,0.22);
+    }
+    .magnifier-lens::after {
+        content: '';
+        position: absolute; top: 9px; left: 13px;
+        width: 24px; height: 12px;
+        border-radius: 50%;
+        background: rgba(255,255,255,0.8);
+        transform: rotate(-25deg);
+        filter: blur(1px);
+    }
+    .magnifier-handle {
+        position: absolute; left: 58px; top: 58px;
+        width: 13px; height: 40px;
+        border-radius: 7px;
+        background: linear-gradient(180deg, #cbd5e1, #64748b);
+        transform: rotate(-45deg);
+        transform-origin: top center;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.25);
+    }
+    .magnifier-tip {
+        position: absolute; left: 50%; top: 84px;
+        transform: translateX(-50%);
+        white-space: nowrap;
+        font-size: 0.78em;
+        color: var(--text-muted);
+        pointer-events: none;
+    }
+    html[data-theme="dark"] .magnifier-lens {
+        border-color: rgba(148, 163, 184, 0.85);
+        background:
+            radial-gradient(circle at 32% 28%, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0.08) 38%, transparent 68%),
+            rgba(255, 255, 255, 0.06);
+    }
+
     @media (max-width: 600px) {
         .input-group { flex-direction: column; }
         .btn { width: 100%; }
@@ -330,6 +389,30 @@
                 <button class="btn outline" style="width:auto;margin:0;padding:6px 12px;" id="copyEggBtn">复制</button>
             </div>
             <button class="btn" style="width:100%;" id="closeEggBtn">收下彩蛋</button>
+        </div>
+    </div>
+
+    <!-- 可拖动的放大镜（彩蛋 6） -->
+    <div id="magnifier" title="按住拖动我">
+        <div class="magnifier-lens" id="magnifierLens"></div>
+        <div class="magnifier-handle"></div>
+        <div class="magnifier-tip" id="magnifierTip">拖我试试～</div>
+    </div>
+
+    <!-- 彩蛋 6 弹窗 -->
+    <div class="modal-overlay" id="egg6Modal">
+        <div class="modal-box">
+            <span class="modal-emoji">🌟</span>
+            <h2 class="modal-title">恭喜获得彩蛋 #6</h2>
+            <p class="modal-desc">
+                你居然想用放大镜对准太阳！这是你的专属兑换码，请前往 <a href="https://pillager-outpost.github.io/2901space/eggs.html" target="_blank">eggs.html</a> 兑换：<br>
+                集齐 9 个彩蛋会触发神秘事件！
+            </p>
+            <div class="egg-code-row">
+                <code class="egg-code" id="egg6Code">try-the-sunlight</code>
+                <button class="btn outline" style="width:auto;margin:0;padding:6px 12px;" id="copyEgg6Btn">复制</button>
+            </div>
+            <button class="btn" style="width:100%;" id="closeEgg6Btn">收下彩蛋</button>
         </div>
     </div>
 
@@ -525,6 +608,110 @@
                 alert('复制失败，请手动复制链接：' + text);
             }
             document.body.removeChild(ta);
+        }
+
+        // ========== 可拖动放大镜 + 彩蛋 6 ==========
+        var magnifier = document.getElementById('magnifier');
+        var magnifierLens = document.getElementById('magnifierLens');
+        var magnifierTip = document.getElementById('magnifierTip');
+        var egg6Modal = document.getElementById('egg6Modal');
+        var egg6Shown = false;
+
+        function updateMagnifierTip() {
+            if (!magnifierTip) return;
+            magnifierTip.textContent = root.getAttribute('data-theme') === 'dark'
+                ? '对准太阳？' : '拖我试试～';
+        }
+        updateMagnifierTip();
+        themeToggle.addEventListener('click', updateMagnifierTip);
+
+        document.getElementById('closeEgg6Btn').addEventListener('click', function () {
+            egg6Modal.classList.remove('show');
+        });
+        egg6Modal.addEventListener('click', function (e) {
+            if (e.target === egg6Modal) egg6Modal.classList.remove('show');
+        });
+        document.getElementById('copyEgg6Btn').addEventListener('click', function () {
+            var text = document.getElementById('egg6Code').textContent;
+            var btn = this;
+            var done = function () {
+                btn.textContent = '✅ 已复制';
+                setTimeout(function () { btn.textContent = '复制'; }, 1500);
+            };
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(text).then(done).catch(function () { fallbackCopy6(text, btn, done); });
+            } else {
+                fallbackCopy6(text, btn, done);
+            }
+        });
+        function fallbackCopy6(text, btn, done) {
+            var ta = document.createElement('textarea');
+            ta.value = text;
+            ta.style.position = 'fixed';
+            ta.style.opacity = '0';
+            document.body.appendChild(ta);
+            ta.select();
+            try { document.execCommand('copy'); done(); }
+            catch (e) { alert('复制失败，请手动复制：' + text); }
+            document.body.removeChild(ta);
+        }
+
+        var magDragging = false, magStartX = 0, magStartY = 0, magLeft = 0, magTop = 0;
+
+        magnifier.addEventListener('pointerdown', function (e) {
+            e.preventDefault();
+            var r = magnifier.getBoundingClientRect();
+            magnifier.style.transform = 'none';
+            magnifier.style.left = r.left + 'px';
+            magnifier.style.top = r.top + 'px';
+            magLeft = r.left; magTop = r.top;
+            magStartX = e.clientX; magStartY = e.clientY;
+            magDragging = true;
+            magnifier.classList.add('dragging');
+            magnifier.setPointerCapture(e.pointerId);
+        });
+
+        magnifier.addEventListener('pointermove', function (e) {
+            if (!magDragging) return;
+            magLeft += e.clientX - magStartX;
+            magTop += e.clientY - magStartY;
+            magStartX = e.clientX; magStartY = e.clientY;
+            magnifier.style.left = magLeft + 'px';
+            magnifier.style.top = magTop + 'px';
+            checkSunAim();
+        });
+
+        function endMagDrag(e) {
+            if (!magDragging) return;
+            magDragging = false;
+            magnifier.classList.remove('dragging');
+            try { magnifier.releasePointerCapture(e.pointerId); } catch (err) {}
+            checkSunAim();
+        }
+        magnifier.addEventListener('pointerup', endMagDrag);
+        magnifier.addEventListener('pointercancel', endMagDrag);
+
+        function checkSunAim() {
+            if (egg6Shown) return;
+            if (root.getAttribute('data-theme') !== 'dark') {
+                magnifier.classList.remove('near-sun');
+                return;
+            }
+            var btn = document.getElementById('themeToggle');
+            if (!btn) return;
+            var b = btn.getBoundingClientRect();
+            var l = magnifierLens.getBoundingClientRect();
+            var dist = Math.hypot(
+                (l.left + l.width / 2) - (b.left + b.width / 2),
+                (l.top + l.height / 2) - (b.top + b.height / 2)
+            );
+            if (dist < 46) {
+                magnifier.classList.add('near-sun');
+                egg6Shown = true;
+                setTimeout(function () { egg6Modal.classList.add('show'); }, 250);
+            } else {
+                magnifier.classList.remove('near-sun');
+            }
         }
     </script>
 </body>
