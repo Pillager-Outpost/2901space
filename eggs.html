@@ -267,11 +267,45 @@
     }
     .back-link:hover { color: var(--accent); border-bottom-color: var(--accent); }
 
+    /* ========== 集齐后的收尾流程 ========== */
+    .continue-btn { display: block; margin: -10px auto 0; padding: 12px 44px; font-size: 1.05em; }
+    .continue-btn[hidden] { display: none; }
+
+    .egg-node.converging {
+        transition: left 0.55s cubic-bezier(.2,.8,.2,1), top 0.55s cubic-bezier(.2,.8,.2,1),
+                    transform 0.55s ease, opacity 0.55s ease;
+    }
+
+    #fireworksCanvas {
+        position: fixed; inset: 0; width: 100%; height: 100%;
+        pointer-events: none; z-index: 9990;
+        transition: opacity 1s ease;
+    }
+
+    #finalScreen {
+        position: fixed; inset: 0;
+        display: none; flex-direction: column; align-items: center; justify-content: center;
+        z-index: 8980; opacity: 0; transition: opacity 0.6s ease;
+        background: radial-gradient(circle at center, rgba(255,255,255,0.35), rgba(255,255,255,0.8));
+        padding: 24px; text-align: center;
+    }
+    html[data-theme="dark"] #finalScreen {
+        background: radial-gradient(circle at center, rgba(11,17,32,0.35), rgba(11,17,32,0.85));
+    }
+    #finalScreen.show { opacity: 1; }
+    .final-emoji {
+        font-size: 3.5em; display: block; margin-bottom: 14px;
+        animation: slowSpin 8s linear infinite;
+    }
+    .final-title { font-size: 2em; font-weight: normal; color: var(--accent); margin-bottom: 32px; }
+    .gift-btn { font-size: 1.15em; padding: 14px 40px; text-decoration: none; }
+
     @media (max-width: 600px) {
         .ring-container { width: 260px; height: 260px; }
         .egg-node { width: 46px; height: 46px; font-size: 1.3em; }
         .input-card { padding: 16px; }
         .code-input-group { flex-direction: column; }
+        .final-title { font-size: 1.5em; }
     }
 </style>
 </head>
@@ -300,6 +334,8 @@
             <div class="ring-center">已收集<br><span id="countText">0/9</span></div>
         </div>
 
+        <button class="btn continue-btn" id="continueBtn" hidden>继续</button>
+
         <div class="input-card">
             <h3>输入兑换码</h3>
             <div class="code-input-group">
@@ -310,6 +346,14 @@
         </div>
 
         <a class="back-link" href="https://pillager-outpost.github.io/2901space/home.html">← 返回用户主页</a>
+    </div>
+
+    <!-- 集齐后：烟花 + 最终界面 -->
+    <canvas id="fireworksCanvas"></canvas>
+    <div id="finalScreen">
+        <span class="final-emoji">👑</span>
+        <h2 class="final-title">你已获得全部彩蛋</h2>
+        <a class="btn gift-btn" href="/2901space/gift.html">神秘礼品</a>
     </div>
 
     <script>
@@ -357,11 +401,14 @@
             'lostin404_10times': 3,
             'eggs_are_everywhere_2901': 4,
             'secretof2901': 5,
-            'try-the-sunlight': 6
+            'try-the-sunlight': 6,
+            'studyveryhard': 7,
+            'broken-card': 8,
+            'weird-captcha': 9
         };
         const EGG_ICONS = {
             1: '🎉', 2: '🫧', 3: '🪵', 4: '💡', 5: '💎',
-            6: '🌟', 7: '🔥', 8: '🍀', 9: '👑'
+            6: '🌟', 7: '📖', 8: '💔', 9: '🤖'
         };
 
         let unlockedList = [];
@@ -372,6 +419,8 @@
 
         const ringContainer = document.getElementById('ringContainer');
         const countText = document.getElementById('countText');
+        const continueBtn = document.getElementById('continueBtn');
+        let finalSequenceStarted = false;
 
         function getRadiusAndSize() {
             if (window.innerWidth < 600) return { r: 95, c: 130, s: 46 };
@@ -379,6 +428,7 @@
         }
 
         function renderNodes() {
+            if (finalSequenceStarted) return;
             const oldNodes = document.querySelectorAll('.egg-node');
             oldNodes.forEach(n => n.remove());
 
@@ -457,7 +507,9 @@
             }
 
             if (unlockedList.length === TOTAL_EGGS) {
-                setTimeout(() => showModal('集齐九枚！', '恭喜你找齐了所有彩蛋，开发者的小心思都被你看穿了！', '👑'), 800);
+                // 全部集齐：显示「继续」按钮，由玩家触发收尾动画
+                continueBtn.hidden = false;
+                showMsg('九枚彩蛋已集齐，点击下方「继续」', 'success');
             }
             return true;
         }
@@ -479,6 +531,12 @@
                     setTimeout(() => showModal('彩蛋5：2901 的秘密', '你在图库输入 2901 找到了它！', '💎'), 300);
                 } else if (eggNumber === 6) {
                     setTimeout(() => showModal('彩蛋6：试图用放大镜对准太阳', '你把放大镜对准了黑暗里的那轮太阳！', '🌟'), 300);
+                } else if (eggNumber === 7) {
+                    setTimeout(() => showModal('彩蛋7：刻苦学习', '清晨或深夜还在刷题，真的很刻苦！', '📖'), 300);
+                } else if (eggNumber === 8) {
+                    setTimeout(() => showModal('彩蛋8：脆弱的卡片', '你把首页的用户卡片点碎了！', '💔'), 300);
+                } else if (eggNumber === 9) {
+                    setTimeout(() => showModal('彩蛋9：你是人吗？', '人机验证失败了三次，系统开始怀疑你了……', '🤖'), 300);
                 }
             }
         });
@@ -515,7 +573,7 @@
         });
 
         themeBtn.addEventListener('pointermove', function(e) {
-            if (!isDragging) return;
+            if (!draggingGuard()) return;
             
             let dx = e.clientX - startX;
             let dy = e.clientY - startY;
@@ -531,6 +589,7 @@
                 checkDragOver(e.clientX, e.clientY);
             }
         });
+        function draggingGuard() { return isDragging; }
 
         themeBtn.addEventListener('pointerup', function(e) {
             if (!isDragging) return;
@@ -554,7 +613,6 @@
 
                 if (dist < 50) {
                     if (unlockEgg(4)) {
-                        // 使用自定义弹窗，避免被浏览器拦截
                         setTimeout(() => showModal('彩蛋4：脑洞神人', '你居然把主题按钮拖进来了！这是一个专属于你的脑洞彩蛋。', '💡'), 200);
                     }
                     egg4Node.classList.remove('drag-over');
@@ -601,6 +659,122 @@
                 themeBtn.style.left = (window.innerWidth - 64) + 'px';
             }
         });
+
+        // ========== 集齐后：依次归中 → 烟花 → 最终界面 ==========
+        const fireworksCanvas = document.getElementById('fireworksCanvas');
+        const fwCtx = fireworksCanvas.getContext('2d');
+        let fwParticles = [];
+        let fwRunning = false;
+        let fwRaf = null;
+
+        function resizeFireworks() {
+            fireworksCanvas.width = window.innerWidth;
+            fireworksCanvas.height = window.innerHeight;
+        }
+        resizeFireworks();
+        window.addEventListener('resize', resizeFireworks);
+
+        function launchFirework(x, y) {
+            const hue = Math.floor(Math.random() * 360);
+            const count = 46 + Math.floor(Math.random() * 32);
+            for (let i = 0; i < count; i++) {
+                const angle = Math.PI * 2 * i / count;
+                const speed = 1.5 + Math.random() * 4;
+                fwParticles.push({
+                    x: x, y: y,
+                    vx: Math.cos(angle) * speed,
+                    vy: Math.sin(angle) * speed,
+                    life: 1,
+                    decay: 0.008 + Math.random() * 0.012,
+                    hue: hue + (Math.random() * 30 - 15),
+                    size: 1.4 + Math.random() * 2
+                });
+            }
+        }
+
+        function animateFireworks() {
+            fwCtx.clearRect(0, 0, fireworksCanvas.width, fireworksCanvas.height);
+            fwCtx.globalCompositeOperation = 'lighter';
+            for (let i = fwParticles.length - 1; i >= 0; i--) {
+                const p = fwParticles[i];
+                p.x += p.vx; p.y += p.vy;
+                p.vy += 0.028;
+                p.vx *= 0.992; p.vy *= 0.992;
+                p.life -= p.decay;
+                if (p.life <= 0) { fwParticles.splice(i, 1); continue; }
+                fwCtx.beginPath();
+                fwCtx.fillStyle = 'hsla(' + p.hue + ', 100%, 65%, ' + p.life + ')';
+                fwCtx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                fwCtx.fill();
+            }
+            fwCtx.globalCompositeOperation = 'source-over';
+            if (fwRunning) fwRaf = requestAnimationFrame(animateFireworks);
+        }
+
+        function startFireworks() {
+            fwRunning = true;
+            fireworksCanvas.style.opacity = '1';
+            for (let k = 0; k < 6; k++) {
+                setTimeout(() => launchFirework(
+                    window.innerWidth * (0.15 + Math.random() * 0.7),
+                    window.innerHeight * (0.15 + Math.random() * 0.4)
+                ), k * 420);
+            }
+            const burst = setInterval(() => launchFirework(
+                window.innerWidth * (0.1 + Math.random() * 0.8),
+                window.innerHeight * (0.1 + Math.random() * 0.5)
+            ), 820);
+            setTimeout(() => clearInterval(burst), 5200);
+            animateFireworks();
+            setTimeout(() => {
+                fwRunning = false;
+                if (fwRaf) cancelAnimationFrame(fwRaf);
+                fireworksCanvas.style.opacity = '0';
+            }, 6800);
+        }
+
+        function showFinalScreen() {
+            const fs = document.getElementById('finalScreen');
+            fs.style.display = 'flex';
+            requestAnimationFrame(() => fs.classList.add('show'));
+            safeSet('eggs_final_done', '1');
+        }
+
+        function playFinalSequence() {
+            if (finalSequenceStarted) return;
+            finalSequenceStarted = true;
+            continueBtn.hidden = true;
+
+            const { c } = getRadiusAndSize();
+            for (let i = 1; i <= TOTAL_EGGS; i++) {
+                const node = document.getElementById('egg-' + i);
+                if (!node) continue;
+                setTimeout(() => {
+                    node.classList.add('converging');
+                    node.style.left = c + 'px';
+                    node.style.top = c + 'px';
+                    node.style.transform = 'scale(' + (1.35 + i * 0.03) + ') rotate(' + (i * 16) + 'deg)';
+                    node.style.zIndex = 100 + i;
+                    node.style.opacity = '0.95';
+                }, (i - 1) * 260);
+            }
+
+            setTimeout(() => {
+                startFireworks();
+                showFinalScreen();
+            }, TOTAL_EGGS * 260 + 600);
+        }
+
+        continueBtn.addEventListener('click', playFinalSequence);
+
+        // 已集齐且之前播过收尾动画：刷新后直接展示最终界面
+        if (unlockedList.length === TOTAL_EGGS) {
+            if (safeGet('eggs_final_done') === '1') {
+                showFinalScreen();
+            } else {
+                continueBtn.hidden = false;
+            }
+        }
     </script>
 </body>
 </html>
