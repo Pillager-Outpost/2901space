@@ -178,11 +178,22 @@
     .modal-emoji { font-size: 2.4em; display: block; margin-bottom: 10px; }
     .modal-title { font-size: 1.3em; font-weight: normal; color: var(--accent); margin-bottom: 6px; }
     .modal-desc { font-size: 0.95em; color: var(--text-muted); margin-bottom: 20px; line-height: 1.6; }
+    .modal-desc a { color: var(--accent); text-decoration: none; border-bottom: 1px dashed var(--accent); }
+    .modal-desc a:hover { border-bottom-style: solid; }
     .result-body { text-align: left; margin-bottom: 20px; }
     .result-group { margin-bottom: 14px; }
     .result-group-name { font-size: 0.98em; color: var(--text); font-weight: bold; margin-bottom: 6px; }
     .result-chips { display: flex; flex-wrap: wrap; gap: 6px; }
     .result-chip { display: inline-block; padding: 2px 10px; font-size: 0.9em; color: var(--highlight-text); background: var(--highlight-bg); border-radius: 8px; }
+    .egg-code-row {
+        display: flex; align-items: center; gap: 8px; justify-content: center; margin-bottom: 24px;
+    }
+    .egg-code {
+        font-family: "Consolas", "Courier New", monospace;
+        font-size: 1em; color: var(--text);
+        background: var(--bg-hover); padding: 8px 16px;
+        border-radius: 10px; border: 1px dashed var(--accent); user-select: all;
+    }
     .modal-btn {
         padding: 11px 24px; font-size: 1em; font-family: inherit; color: var(--btn-text);
         background: var(--btn-bg); border: none; border-radius: 10px; cursor: pointer; width: 100%;
@@ -274,6 +285,23 @@
             <p class="modal-desc" id="resultDesc">以下是你勾选的薄弱题号：</p>
             <div class="result-body" id="resultBody"></div>
             <button class="modal-btn" id="closeResultBtn">知道了</button>
+        </div>
+    </div>
+
+    <!-- 彩蛋 7 弹窗 -->
+    <div class="modal-overlay" id="egg7Modal">
+        <div class="modal-box">
+            <span class="modal-emoji" id="egg7Emoji">📖</span>
+            <h2 class="modal-title">恭喜获得彩蛋 #7</h2>
+            <p class="modal-desc" id="egg7Desc">
+                这么用功，真是刻苦学习！这是你的专属兑换码，请前往 <a href="https://pillager-outpost.github.io/2901space/eggs.html" target="_blank">eggs.html</a> 兑换：<br>
+                集齐 9 个彩蛋会触发神秘事件！
+            </p>
+            <div class="egg-code-row">
+                <code class="egg-code" id="egg7Code">studyveryhard</code>
+                <button class="clear-btn" style="padding:6px 12px;" id="copyEgg7Btn">复制</button>
+            </div>
+            <button class="submit-btn" style="width:100%;justify-content:center;" id="closeEgg7Btn">收下彩蛋</button>
         </div>
     </div>
 
@@ -784,12 +812,64 @@
             }
         });
 
+        /* ========== 彩蛋 7：清晨 / 深夜刷题 ========== */
+        var egg7Modal = document.getElementById('egg7Modal');
+        var egg7Shown = false;
+
+        document.getElementById('closeEgg7Btn').addEventListener('click', function () {
+            egg7Modal.classList.remove('show');
+        });
+        egg7Modal.addEventListener('click', function (e) {
+            if (e.target === egg7Modal) egg7Modal.classList.remove('show');
+        });
+        document.getElementById('copyEgg7Btn').addEventListener('click', function () {
+            var text = document.getElementById('egg7Code').textContent;
+            var btn = this;
+            var done = function () {
+                btn.textContent = '✅ 已复制';
+                setTimeout(function () { btn.textContent = '复制'; }, 1500);
+            };
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(text).then(done).catch(function () { fallbackCopy7(text, btn, done); });
+            } else {
+                fallbackCopy7(text, btn, done);
+            }
+        });
+        function fallbackCopy7(text, btn, done) {
+            var ta = document.createElement('textarea');
+            ta.value = text;
+            ta.style.position = 'fixed';
+            ta.style.opacity = '0';
+            document.body.appendChild(ta);
+            ta.select();
+            try { document.execCommand('copy'); done(); }
+            catch (e) { alert('复制失败，请手动复制：' + text); }
+            document.body.removeChild(ta);
+        }
+
+        function checkEgg7() {
+            if (egg7Shown) return;
+            var now = new Date();
+            var h = now.getHours();
+            var m = now.getMinutes();
+            // 7:00 以前，或 22:30 以后（含 22:30）
+            if (!(h < 7 || h > 22 || (h === 22 && m >= 30))) return;
+
+            egg7Shown = true;
+            var early = h < 7;
+            document.getElementById('egg7Emoji').textContent = early ? '🌅' : '🌙';
+            document.getElementById('egg7Desc').innerHTML =
+                (early ? '一大早就' : '这么晚了还') + '在刷题，真是刻苦学习！这是你的专属兑换码，请前往 <a href="https://pillager-outpost.github.io/2901space/eggs.html" target="_blank">eggs.html</a> 兑换：<br>集齐 9 个彩蛋会触发神秘事件！';
+            setTimeout(function () { egg7Modal.classList.add('show'); }, 600);
+        }
+
         /* ========== 初始化 ========== */
         (async function init() {
             if (!(await checkAccess())) return;
             await loadConfig();
             await loadMyResponse();
             await initCanvas();
+            checkEgg7();
         })();
     </script>
 </body>
