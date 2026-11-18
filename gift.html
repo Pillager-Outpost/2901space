@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>谢幕 · 2901 Space</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎬</text></svg>">
+<style>
+    :root {
+        --bg1: #E0F2FE; --bg2: #F0FDF4;
+        --card: rgba(255, 255, 255, 0.9);
+        --text: #1E293B; --text-muted: #64748B;
+        --border: rgba(203, 213, 225, 0.6);
+        --accent: #0EA5E9;
+        --btn-bg: #0EA5E9; --btn-text: #fff;
+        --shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+        --t-color: 0.3s ease-out;
+    }
+    html[data-theme="dark"] {
+        --bg1: #0B1120; --bg2: #111827;
+        --card: rgba(30, 41, 59, 0.9);
+        --text: #E2E8F0; --text-muted: #94A3B8;
+        --border: rgba(51, 65, 85, 0.8);
+        --accent: #38BDF8;
+        --btn-bg: #38BDF8; --btn-text: #0B1120;
+        --shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; overflow: hidden; }
+
+    body {
+        background: linear-gradient(180deg, #050914 0%, #0B1120 55%, #111827 100%);
+        color: #E2E8F0;
+        font-family: "华文中宋", "STZhongsong", "SimSun", serif;
+        line-height: 1.8;
+    }
+
+    .cinema {
+        position: fixed; inset: 0; overflow: hidden;
+    }
+    .cinema::before {
+        content: '';
+        position: absolute; inset: 0;
+        background: radial-gradient(ellipse at 50% 38%, rgba(56, 189, 248, 0.09), transparent 62%);
+        pointer-events: none;
+    }
+
+    .back-home {
+        position: fixed; top: 22px; right: 24px; z-index: 20;
+        padding: 6px 14px; font-size: 0.85em; font-family: inherit;
+        color: #64748B; text-decoration: none; letter-spacing: 0.05em;
+        border: 1px solid rgba(148, 163, 184, 0.25); border-radius: 10px;
+        transition: color 0.2s, border-color 0.2s, background 0.2s;
+    }
+    .back-home:hover {
+        color: #7DD3FC; border-color: rgba(125, 211, 252, 0.5);
+        background: rgba(125, 211, 252, 0.08);
+    }
+
+    /* ===== 片尾滚动字幕 ===== */
+    .credits {
+        position: absolute; top: 100vh; left: 0; width: 100%;
+        display: flex; flex-direction: column; align-items: center;
+        padding: 0 24px 80px;
+        animation: rollCredits 38s linear forwards;
+    }
+    @keyframes rollCredits {
+        from { transform: translateY(0); }
+        to   { transform: translateY(calc(-100% - 80px)); }
+    }
+
+    .credit-spacer { height: 42vh; flex-shrink: 0; }
+
+    .reveal {
+        opacity: 0; transform: translateY(26px);
+        transition: opacity 0.9s ease, transform 0.9s ease;
+    }
+    .reveal.visible { opacity: 1; transform: none; }
+
+    .credit-title {
+        font-size: 2.2em; font-weight: normal;
+        letter-spacing: 0.5em; text-indent: 0.5em;
+        color: #F8FAFC; margin-bottom: 64px;
+    }
+
+    .credit-block { text-align: center; margin-bottom: 52px; }
+    .credit-role {
+        font-size: 0.85em; letter-spacing: 0.28em;
+        color: #64748B; margin-bottom: 8px;
+    }
+    .credit-name {
+        font-size: 1.65em; letter-spacing: 0.12em; color: #7DD3FC;
+    }
+    .credit-tech {
+        display: flex; flex-wrap: wrap; justify-content: center; gap: 28px;
+        font-size: 1.15em; color: #E2E8F0; letter-spacing: 0.05em;
+    }
+
+    .credit-divider {
+        color: #38BDF8; letter-spacing: 1em; text-indent: 1em;
+        font-size: 0.9em; margin: 14px 0 46px;
+    }
+
+    .credit-thanks {
+        text-align: center; font-size: 1.15em;
+        line-height: 2.3; color: #CBD5E1; margin-bottom: 46px;
+    }
+
+    .credit-gift-label {
+        font-size: 1.3em; color: #FDE68A;
+        letter-spacing: 0.16em; margin-bottom: 28px;
+    }
+
+    .gift-photo {
+        width: 100%; max-width: min(80vw, 520px);
+        margin: 0 auto 36px;
+    }
+    .gift-photo img {
+        display: block; width: 100%; height: auto;
+        border-radius: 14px;
+        border: 1px solid rgba(148, 163, 184, 0.35);
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+    }
+
+    .credit-the-end {
+        font-size: 0.95em; letter-spacing: 0.45em; text-indent: 0.45em;
+        color: #64748B; margin-top: 24px;
+    }
+
+    @media (max-width: 600px) {
+        .credits { animation-duration: 34s; }
+        .credit-title { font-size: 1.7em; }
+        .credit-name { font-size: 1.35em; }
+        .credit-tech { gap: 16px; font-size: 1em; }
+        .credit-thanks { font-size: 1em; }
+        .gift-photo { max-width: 86vw; }
+    }
+</style>
+</head>
+<body>
+
+    <div class="cinema">
+        <a class="back-home" href="https://pillager-outpost.github.io/2901space/home.html">← 返回主页</a>
+
+        <div class="credits" id="credits">
+            <div class="credit-spacer"></div>
+
+            <h1 class="credit-title reveal">鸣谢</h1>
+
+            <div class="credit-block reveal">
+                <div class="credit-role">设计 / 开发</div>
+                <div class="credit-name">刘智中</div>
+            </div>
+
+            <div class="credit-block reveal">
+                <div class="credit-role">开发协助</div>
+                <div class="credit-name">Deepseek</div>
+            </div>
+
+            <div class="credit-block reveal">
+                <div class="credit-role">技术支持（无先后顺序）</div>
+                <div class="credit-tech">
+                    <span>Opencode</span>
+                    <span>Github</span>
+                    <span>Supabase</span>
+                </div>
+            </div>
+
+            <div class="credit-divider reveal">· · ·</div>
+
+            <div class="credit-thanks reveal">
+                感谢您对 2901 Space 的探索<br>
+                感谢一路相伴<br>
+            </div>
+
+            <div class="credit-gift-label reveal">这是您应得的礼物</div>
+
+            <div class="gift-photo reveal">
+                <img src="/2901space/end.png" alt="这是您应得的礼物">
+            </div>
+
+            <div class="credit-the-end reveal">— 完 —</div>
+
+            <div class="credit-spacer" style="height: 18vh;"></div>
+        </div>
+    </div>
+
+    <script>
+        // 字幕条目进入视口时淡入，模拟电影片尾逐条浮现
+        var io = new IntersectionObserver(function (entries) {
+            entries.forEach(function (e) {
+                if (e.isIntersecting) e.target.classList.add('visible');
+            });
+        }, { threshold: 0.15 });
+
+        document.querySelectorAll('.reveal').forEach(function (el) {
+            io.observe(el);
+        });
+    </script>
+</body>
+</html>
