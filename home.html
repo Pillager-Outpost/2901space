@@ -161,8 +161,12 @@
         display: flex;
         align-items: center;
         justify-content: space-between;
-        transition: background var(--t-color), border-color var(--t-color), box-shadow var(--t-color);
+        transition: background var(--t-color), border-color var(--t-color), box-shadow var(--t-color), opacity 0.2s, transform 0.08s;
+        user-select: none;
+        cursor: pointer;
     }
+    .header-card.tap { transform: scale(0.985); }
+    .header-card.hidden { opacity: 0; pointer-events: none; }
 
     .header-left { display: flex; align-items: center; gap: 16px; }
 
@@ -197,6 +201,64 @@
     .settings-btn:hover {
         background: var(--bg-hover); color: var(--accent);
         border-color: var(--accent); transform: rotate(45deg);
+    }
+
+    /* ===== 脆弱的卡片：连点 5 次断裂，两半倒在下方卡片上 ===== */
+    #cardWrap { position: relative; }
+
+    #breakLayer {
+        position: absolute; inset: 0;
+        pointer-events: none;
+        perspective: 1100px;
+        transform-style: preserve-3d;
+        z-index: 20;
+    }
+    .half {
+        position: absolute; inset: 0;
+        pointer-events: none;
+        backface-visibility: visible;
+        transform-style: preserve-3d;
+        will-change: transform, opacity, filter;
+    }
+    .half.fold-left  { animation: foldLeft 1.2s cubic-bezier(.25,.75,.3,1) forwards; }
+    .half.fold-right { animation: foldRight 1.2s cubic-bezier(.25,.75,.3,1) forwards; }
+
+    @keyframes foldLeft {
+        0%   { transform: rotateY(0deg)   translate(0, 0)       rotateZ(0deg);   opacity: 1; filter: drop-shadow(0 4px 10px rgba(0,0,0,.18)); }
+        22%  { transform: rotateY(-16deg) translate(-4px, -4px)  rotateZ(-1deg);  opacity: 1; filter: drop-shadow(0 6px 12px rgba(0,0,0,.2)); }
+        52%  { transform: rotateY(-64deg) translate(-28px, 42px)  rotateZ(-15deg); opacity: 1; filter: drop-shadow(0 10px 18px rgba(0,0,0,.22)); }
+        100% { transform: rotateY(-74deg) translate(-62px, 152px) rotateZ(-34deg); opacity: 1; filter: drop-shadow(0 14px 22px rgba(0,0,0,.26)); }
+    }
+    @keyframes foldRight {
+        0%   { transform: rotateY(0deg)   translate(0, 0)       rotateZ(0deg);   opacity: 1; filter: drop-shadow(0 4px 10px rgba(0,0,0,.18)); }
+        22%  { transform: rotateY(16deg)  translate(4px, -4px)   rotateZ(1deg);   opacity: 1; filter: drop-shadow(0 6px 12px rgba(0,0,0,.2)); }
+        52%  { transform: rotateY(64deg)  translate(28px, 42px)   rotateZ(15deg);  opacity: 1; filter: drop-shadow(0 10px 18px rgba(0,0,0,.22)); }
+        100% { transform: rotateY(74deg)  translate(62px, 152px)  rotateZ(34deg);  opacity: 1; filter: drop-shadow(0 14px 22px rgba(0,0,0,.26)); }
+    }
+
+    .crack-flash { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+    .crack-flash polyline {
+        fill: none; stroke: #fff; stroke-width: 3;
+        vector-effect: non-scaling-stroke;
+        stroke-dasharray: 100; stroke-dashoffset: 100;
+        filter: drop-shadow(0 0 6px #fff);
+        animation: drawCrack 0.5s ease-out forwards;
+    }
+    @keyframes drawCrack {
+        0%   { stroke-dashoffset: 100; opacity: 1; }
+        45%  { stroke-dashoffset: 0; opacity: 1; }
+        100% { stroke-dashoffset: 0; opacity: 0; }
+    }
+
+    .shard {
+        position: absolute; width: 8px; height: 8px;
+        background: var(--accent); opacity: 0.9;
+        clip-path: polygon(50% 0, 100% 100%, 0 70%);
+        animation: shardFly 0.85s ease-out forwards;
+    }
+    @keyframes shardFly {
+        0%   { transform: translate(0,0) rotate(0deg); opacity: 0.95; }
+        100% { transform: translate(var(--dx), var(--dy)) rotate(var(--rot)); opacity: 0; }
     }
 
     .main-card {
@@ -340,15 +402,18 @@
 
     <!-- 页面内容 -->
     <div class="container">
-        <div class="header-card">
-            <div class="header-left">
-                <div class="avatar">👤</div>
-                <h1 class="greeting">
-                    <span id="greetingText">你好</span>
-                    <span class="name" id="displayName">加载中...</span>
-                </h1>
+        <div id="cardWrap">
+            <div class="header-card" id="userCard">
+                <div class="header-left">
+                    <div class="avatar">👤</div>
+                    <h1 class="greeting">
+                        <span id="greetingText">你好</span>
+                        <span class="name" id="displayName">加载中...</span>
+                    </h1>
+                </div>
+                <button class="settings-btn" id="settingsBtn" title="设置">⚙️</button>
             </div>
-            <button class="settings-btn" id="settingsBtn" title="设置">⚙️</button>
+            <div id="breakLayer"></div>
         </div>
 
         <div class="main-card">
@@ -402,6 +467,25 @@
                 <button class="btn outline" style="width:auto; margin:0; padding:6px 12px;" id="copyEggBtn">复制</button>
             </div>
             <button class="btn danger" style="width:100%;" id="closeEggBtn">收下彩蛋</button>
+        </div>
+    </div>
+
+    <!-- 彩蛋 8 弹窗 -->
+    <div class="modal-overlay" id="egg8Modal">
+        <div class="modal-box egg-box">
+            <span class="egg-emoji">💔</span>
+            <h2 class="egg-title">彩蛋 #8 · 脆弱的卡片</h2>
+            
+            <p class="egg-desc">
+                你把这张脆弱的卡片点碎了！这是你的专属兑换码，请前往 <a href="https://pillager-outpost.github.io/2901space/eggs.html" target="_blank">eggs.html</a> 兑换：<br>
+                集齐 9 个彩蛋会触发神秘事件！
+            </p>
+
+            <div class="egg-code-row">
+                <code class="egg-code" id="egg8Code">broken-card</code>
+                <button class="btn outline" style="width:auto; margin:0; padding:6px 12px;" id="copyEgg8Btn">复制</button>
+            </div>
+            <button class="btn danger" style="width:100%;" id="closeEgg8Btn">收下彩蛋</button>
         </div>
     </div>
 
@@ -517,7 +601,7 @@
             var safeLevel = PERMISSIONS[level] ? level : 'guest'; 
             var allowed = PERMISSIONS[safeLevel];
             
-            // 所有角色都要加上“彩蛋收集站”
+            // 所有角色都要加上"彩蛋收集站"
             var fullAllowed = allowed.concat(['彩蛋收集站']);
 
             var html = '';
@@ -670,6 +754,126 @@
 
         setInterval(createBubble, 600); 
         for(let i=0; i<5; i++) setTimeout(createBubble, i * 200);
+
+        // ========== 彩蛋 8：脆弱的卡片（连点 5 次断裂） ==========
+        var egg8Modal = document.getElementById('egg8Modal');
+        document.getElementById('closeEgg8Btn').addEventListener('click', function () {
+            egg8Modal.classList.remove('show');
+        });
+        egg8Modal.addEventListener('click', function (e) {
+            if (e.target === egg8Modal) egg8Modal.classList.remove('show');
+        });
+        document.getElementById('copyEgg8Btn').addEventListener('click', function () {
+            var text = document.getElementById('egg8Code').textContent;
+            var btn = this;
+            var done = function () {
+                btn.textContent = '已复制';
+                setTimeout(function () { btn.textContent = '复制'; }, 1500);
+            };
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(text).then(done).catch(function () { fallbackCopy8(text, btn, done); });
+            } else {
+                fallbackCopy8(text, btn, done);
+            }
+        });
+        function fallbackCopy8(text, btn, done) {
+            var ta = document.createElement('textarea');
+            ta.value = text;
+            ta.style.position = 'fixed';
+            ta.style.opacity = '0';
+            document.body.appendChild(ta);
+            ta.select();
+            try { document.execCommand('copy'); done(); }
+            catch (e) { alert('复制失败，请手动复制：' + text); }
+            document.body.removeChild(ta);
+        }
+
+        var userCard = document.getElementById('userCard');
+        var breakLayer = document.getElementById('breakLayer');
+        var cardClickCount = 0;
+        var lastCardClickAt = 0;
+        var cardBroken = false;
+        var egg8Shown = false;
+
+        userCard.addEventListener('click', function (e) {
+            if (cardBroken) return;
+            if (e.target.closest('.settings-btn')) return;   // 点设置不算
+
+            var now = Date.now();
+            if (now - lastCardClickAt > 1500) cardClickCount = 0;
+            lastCardClickAt = now;
+            cardClickCount++;
+
+            userCard.classList.remove('tap');
+            void userCard.offsetWidth;
+            userCard.classList.add('tap');
+
+            if (cardClickCount >= 5) breakUserCard(e.clientX);
+        });
+
+        function breakUserCard(clientX) {
+            cardBroken = true;
+            var r = userCard.getBoundingClientRect();
+            var xPct = ((clientX - r.left) / r.width) * 100;
+            xPct = Math.max(12, Math.min(88, xPct));   // 不从边缘裂
+
+            var pts = [];
+            var N = 8;
+            for (var i = 0; i <= N; i++) {
+                var y = (i * 100) / N;
+                var wobble = (i === 0 || i === N) ? 0 : (Math.random() * 2 - 1) * 3.6;
+                var x = Math.max(3, Math.min(97, xPct + wobble));
+                pts.push([x, y]);
+            }
+            function polyStr(arr) {
+                return arr.map(function (p) { return p[0].toFixed(2) + '% ' + p[1].toFixed(2) + '%'; }).join(',');
+            }
+            function makeHalf(cls, poly) {
+                var h = userCard.cloneNode(true);
+                h.removeAttribute('id');
+                h.querySelectorAll('[id]').forEach(function (n) { n.removeAttribute('id'); });
+                h.classList.add('half', cls);
+                h.style.clipPath = 'polygon(' + polyStr(poly) + ')';
+                h.style.transformOrigin = xPct + '% 50%';
+                breakLayer.appendChild(h);
+            }
+            makeHalf('fold-left',  [[0, 0]].concat(pts, [[0, 100]]));
+            makeHalf('fold-right', [pts[0], [100, 0], [100, 100]].concat(pts.slice().reverse()));
+
+            // 裂口闪光
+            var ns = 'http://www.w3.org/2000/svg';
+            var svg = document.createElementNS(ns, 'svg');
+            svg.setAttribute('class', 'crack-flash');
+            svg.setAttribute('viewBox', '0 0 100 100');
+            svg.setAttribute('preserveAspectRatio', 'none');
+            var line = document.createElementNS(ns, 'polyline');
+            line.setAttribute('points', pts.map(function (p) { return p[0] + ',' + p[1]; }).join(' '));
+            line.setAttribute('pathLength', '100');
+            svg.appendChild(line);
+            breakLayer.appendChild(svg);
+
+            // 裂口碎屑
+            for (var k = 0; k < 18; k++) {
+                var d = document.createElement('div');
+                d.className = 'shard';
+                d.style.left = xPct + '%';
+                d.style.top = (12 + Math.random() * 76) + '%';
+                d.style.setProperty('--dx', ((Math.random() * 2 - 1) * 180) + 'px');
+                d.style.setProperty('--dy', ((Math.random() * 2 - 1) * 110 + 40) + 'px');
+                d.style.setProperty('--rot', (Math.random() * 720 - 360) + 'deg');
+                d.style.animationDelay = (Math.random() * 0.09) + 's';
+                breakLayer.appendChild(d);
+            }
+
+            userCard.classList.add('hidden');
+
+            // 碎完之后弹彩蛋 8
+            setTimeout(function () {
+                if (egg8Shown) return;
+                egg8Shown = true;
+                egg8Modal.classList.add('show');
+            }, 1200);
+        }
     </script>
 </body>
 </html>
