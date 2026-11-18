@@ -281,6 +281,8 @@
     .modal-emoji { font-size: 2.4em; display: block; margin-bottom: 10px; }
     .modal-title { font-size: 1.25em; font-weight: normal; color: var(--accent); margin-bottom: 8px; }
     .modal-desc { font-size: 0.95em; color: var(--text-muted); margin-bottom: 22px; line-height: 1.6; }
+    .modal-desc a { color: var(--accent); text-decoration: none; border-bottom: 1px dashed var(--accent); }
+    .modal-desc a:hover { border-bottom-style: solid; }
     .modal-actions { display: flex; gap: 10px; }
     .modal-actions button {
         flex: 1; padding: 10px; font-size: 0.98em; font-family: inherit;
@@ -292,6 +294,24 @@
     .modal-cancel { border: 1px solid var(--border); background: transparent; color: var(--text); }
     .modal-cancel:hover { background: var(--bg-hover); }
     .modal-confirm { border: none; background: var(--err); color: var(--err-contrast); }
+
+    /* ========== 彩蛋 9 弹窗 ========== */
+    .egg-code-row {
+        display: flex; align-items: center; gap: 8px; justify-content: center; margin-bottom: 22px;
+    }
+    .egg-code {
+        font-family: "Consolas", "Courier New", monospace;
+        font-size: 1em; color: var(--text);
+        background: var(--bg-hover); padding: 8px 16px;
+        border-radius: 10px; border: 1px dashed var(--accent); user-select: all;
+    }
+    .modal-full-btn {
+        width: 100%; padding: 10px; font-size: 0.98em; font-family: inherit;
+        border: none; border-radius: 10px;
+        background: var(--btn-bg); color: var(--btn-text); cursor: pointer;
+        transition: transform 0.15s, opacity 0.2s;
+    }
+    .modal-full-btn:hover { transform: translateY(-2px); }
 
     @media (max-width: 600px) {
         body { padding: 76px 14px 32px; }
@@ -368,6 +388,23 @@
                 <button type="button" class="modal-cancel" id="cancelDeleteBtn">取消</button>
                 <button type="button" class="modal-confirm" id="confirmDeleteBtn">确认删除</button>
             </div>
+        </div>
+    </div>
+
+    <!-- 彩蛋 9 弹窗 -->
+    <div class="modal-overlay" id="egg9Modal">
+        <div class="modal-box">
+            <span class="modal-emoji">🤖</span>
+            <h2 class="modal-title">彩蛋 #9 · 你是人吗？</h2>
+            <p class="modal-desc">
+                连着三次都没拖对，系统开始怀疑你了……这是你的专属兑换码，请前往 <a href="https://pillager-outpost.github.io/2901space/eggs.html" target="_blank">eggs.html</a> 兑换：<br>
+                集齐 9 个彩蛋会触发神秘事件！
+            </p>
+            <div class="egg-code-row">
+                <code class="egg-code" id="egg9Code">weird-captcha</code>
+                <button type="button" class="modal-cancel" style="width:auto;padding:8px 14px;" id="copyEgg9Btn">复制</button>
+            </div>
+            <button type="button" class="modal-full-btn" id="closeEgg9Btn">收下彩蛋</button>
         </div>
     </div>
 
@@ -598,6 +635,42 @@
             charCount.textContent = textarea.value.length;
         });
 
+        /* ========== 彩蛋 9：人机验证失败 3 次 ========== */
+        var egg9Modal = document.getElementById('egg9Modal');
+        var egg9Shown = false;
+        var captchaFailCount = 0;
+
+        document.getElementById('closeEgg9Btn').addEventListener('click', function () {
+            egg9Modal.classList.remove('show');
+        });
+        egg9Modal.addEventListener('click', function (e) {
+            if (e.target === egg9Modal) egg9Modal.classList.remove('show');
+        });
+        document.getElementById('copyEgg9Btn').addEventListener('click', function () {
+            var text = document.getElementById('egg9Code').textContent;
+            var btn = this;
+            var done = function () {
+                btn.textContent = '已复制';
+                setTimeout(function () { btn.textContent = '复制'; }, 1500);
+            };
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(text).then(done).catch(function () { fallbackCopy9(text, btn, done); });
+            } else {
+                fallbackCopy9(text, btn, done);
+            }
+        });
+        function fallbackCopy9(text, btn, done) {
+            var ta = document.createElement('textarea');
+            ta.value = text;
+            ta.style.position = 'fixed';
+            ta.style.opacity = '0';
+            document.body.appendChild(ta);
+            ta.select();
+            try { document.execCommand('copy'); done(); }
+            catch (e) { alert('复制失败，请手动复制：' + text); }
+            document.body.removeChild(ta);
+        }
+
         /* ========== 滑块人机验证 ========== */
         var captchaPassed = false;
         var submitBtn = document.getElementById('submitBtn');
@@ -649,6 +722,14 @@
                 label.textContent = msg || '验证失败，请重试';
                 thumb.textContent = '→';
                 submitBtn.disabled = true;
+
+                // 彩蛋 9：累计失败 3 次
+                captchaFailCount++;
+                if (captchaFailCount >= 3 && !egg9Shown) {
+                    egg9Shown = true;
+                    setTimeout(function () { egg9Modal.classList.add('show'); }, 300);
+                }
+
                 setTimeout(reset, 900);
             }
 
