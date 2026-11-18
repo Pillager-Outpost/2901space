@@ -16,7 +16,7 @@
         --shadow-hover: 0 12px 32px rgba(14, 165, 233, 0.15);
         --bg-hover: #f8fafc; --input-bg: rgba(255, 255, 255, 0.5);
         --highlight-bg: #BAE6FD; --highlight-text: #0369A1;
-        --ok: #0a7d32; --t-color: 0.3s ease-out;
+        --ok: #0a7d32; --err: #c62828; --t-color: 0.3s ease-out;
     }
     html[data-theme="dark"] {
         --bg1: #0B1120; --bg2: #111827;
@@ -27,7 +27,7 @@
         --shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
         --shadow-hover: 0 12px 32px rgba(56, 189, 248, 0.2);
         --bg-hover: #1e293b; --input-bg: rgba(255, 255, 255, 0.06);
-        --highlight-bg: #0C4A6E; --highlight-text: #7DD3FC; --ok: #4ade80;
+        --highlight-bg: #0C4A6E; --highlight-text: #7DD3FC; --ok: #4ade80; --err: #f87171;
     }
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html { scroll-behavior: smooth; }
@@ -126,17 +126,41 @@
     .submit-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
     .saved-tip { font-size: 0.9em; color: var(--ok); text-align: center; }
 
-    /* 自由发挥区预留卡片 */
-    .soon-card {
-        text-align: center; padding: 34px 24px;
-        border-style: dashed; border-color: var(--border);
+    /* ========== 自由发挥区（内嵌公共画布） ========== */
+    .canvas-status {
+        display: flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap;
+        font-size: 0.95em; color: var(--text-muted); margin-bottom: 12px; text-align: center;
     }
-    .soon-icon {
-        font-size: 2.6em; display: block; margin-bottom: 10px; opacity: 0.85;
-        filter: grayscale(0.2);
+    .canvas-preview {
+        display: block; width: 100%; max-width: 480px; margin: 0 auto 12px;
+        border: 1px solid var(--border); border-radius: 12px;
     }
-    .soon-title { font-size: 1.3em; font-weight: normal; color: var(--accent); margin-bottom: 6px; }
-    .soon-desc { font-size: 0.95em; color: var(--text-muted); }
+    .canvas-toolbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 12px; }
+    .canvas-tool-label { font-size: 0.85em; color: var(--text-muted); }
+    .swatch {
+        width: 24px; height: 24px; border-radius: 50%; border: 2px solid transparent;
+        cursor: pointer; transition: transform 0.15s, border-color 0.2s;
+    }
+    .swatch:hover { transform: scale(1.12); }
+    .swatch.active { border-color: var(--text); transform: scale(1.12); }
+    input[type="color"] { width: 30px; height: 30px; padding: 0; border: none; background: transparent; cursor: pointer; }
+    input[type="range"] { width: 100px; accent-color: var(--accent); }
+    .tool-btn {
+        font-size: 0.78em; font-family: inherit; padding: 5px 12px; border-radius: 8px; cursor: pointer;
+        border: 1px solid var(--border); background: transparent; color: var(--text-muted);
+        transition: background 0.2s, color 0.2s, border-color 0.2s;
+    }
+    .tool-btn:hover, .tool-btn.active { background: var(--accent); color: var(--btn-text); border-color: var(--accent); }
+    .canvas-wrap {
+        width: 100%; aspect-ratio: 3 / 2; border: 1px solid var(--border); border-radius: 12px;
+        overflow: hidden; background-color: #fff;
+        background-image: linear-gradient(0deg, #eef2f7 1px, transparent 1px), linear-gradient(90deg, #eef2f7 1px, transparent 1px);
+        background-size: 24px 24px;
+    }
+    #board { display: block; width: 100%; height: 100%; touch-action: none; cursor: crosshair; }
+    .canvas-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
+    .inline-msg { font-size: 0.88em; color: var(--err); min-height: 1.4em; margin-top: 8px; }
+    .inline-msg.ok { color: var(--ok); }
 
     .modal-overlay {
         position: fixed; inset: 0; background: rgba(0, 0, 0, 0.5);
@@ -179,6 +203,7 @@
         .submit-bar { position: static; }
         .submit-actions { width: 100%; }
         .submit-btn, .clear-btn { flex: 1; justify-content: center; }
+        input[type="range"] { width: 80px; }
     }
 </style>
 </head>
@@ -198,11 +223,38 @@
 
         <div id="surveyGroups"></div>
 
-        <!-- 自由发挥区：预留 -->
-        <div class="card soon-card">
-            <span class="soon-icon">🎨</span>
-            <h2 class="soon-title">自由发挥区</h2>
-            <p class="soon-desc">暂未上线，敬请期待～</p>
+        <!-- 自由发挥区：内嵌公共画布 -->
+        <div class="card" id="canvasCard">
+            <h2 class="section-title">🎨 自由发挥区</h2>
+            <div class="canvas-status" id="canvasStatusBox">
+                <span id="canvasStatusIcon">⏳</span>
+                <span id="canvasStatusText">正在检查画布状态…</span>
+                <button type="button" class="mini-btn" id="canvasEnterBtn" style="display:none;">✏️ 开始创作</button>
+                <button type="button" class="mini-btn" id="canvasRetryBtn" style="display:none;">🔄 重试</button>
+            </div>
+            <img id="canvasPreview" class="canvas-preview" alt="当前画布作品" style="display:none;">
+
+            <div id="canvasEditor" style="display:none;">
+                <div class="canvas-toolbar">
+                    <span class="canvas-tool-label">颜色</span>
+                    <span class="swatch active" data-color="#1E293B" style="background:#1E293B;"></span>
+                    <span class="swatch" data-color="#0EA5E9" style="background:#0EA5E9;"></span>
+                    <span class="swatch" data-color="#EF4444" style="background:#EF4444;"></span>
+                    <span class="swatch" data-color="#22C55E" style="background:#22C55E;"></span>
+                    <span class="swatch" data-color="#F59E0B" style="background:#F59E0B;"></span>
+                    <input type="color" id="customCanvasColor" value="#1E293B" title="自定义颜色">
+                    <span class="canvas-tool-label">粗细</span>
+                    <input type="range" id="canvasBrushSize" min="1" max="30" value="4">
+                    <button type="button" class="tool-btn" id="canvasEraserBtn">🧽 橡皮</button>
+                    <button type="button" class="tool-btn" id="canvasClearBtn">🗑️ 清空重画</button>
+                </div>
+                <div class="canvas-wrap"><canvas id="board"></canvas></div>
+                <div class="canvas-actions">
+                    <button type="button" class="submit-btn" id="canvasUploadBtn">📤 上传并解锁</button>
+                    <button type="button" class="clear-btn" id="canvasGiveUpBtn">放弃修改</button>
+                </div>
+                <div class="inline-msg" id="canvasMsg"></div>
+            </div>
         </div>
 
         <div class="card submit-bar" id="submitBar">
@@ -236,9 +288,11 @@
         var ANON_KEY     = 'sb_publishable_X5i03Y12PA5L71QARR9TIw_6FOlJpVr';
         var GET_USER_URL = SUPABASE_URL + '/functions/v1/get_user';
         var SURVEY_URL   = SUPABASE_URL + '/functions/v1/survey';
+        var CANVAS_URL   = SUPABASE_URL + '/functions/v1/canvas';
 
         var token = safeGet('token');
         var currentUsername = safeGet('username');
+        var displayName = safeGet('displayName') || '';
 
         /* ========== 主题 ========== */
         var root = document.documentElement;
@@ -304,8 +358,20 @@
                 body: JSON.stringify(body)
             });
         }
+        function canvasApi(body) {
+            return fetch(CANVAS_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'apikey': ANON_KEY, 'Authorization': 'Bearer ' + ANON_KEY },
+                body: JSON.stringify(body)
+            }).then(function (r) { return r.json().catch(function () { return {}; }); });
+        }
+        function formatTime(s) {
+            var d = new Date(s);
+            if (isNaN(d.getTime())) return s || '—';
+            return d.toLocaleString('zh-CN', { year:'numeric', month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit', hour12:false });
+        }
 
-        /* ========== 数据 ========== */
+        /* ========== 问卷部分（原有逻辑，不变） ========== */
         var SURVEY_DATA = { title: '生物错题统计', groups: [] };
         var hasSubmitted = false;
 
@@ -382,7 +448,6 @@
             updateCount();
         });
 
-        /* ========== 载入配置 ========== */
         async function loadConfig() {
             try {
                 var res = await apiCall({ action: 'get_config', currentUser: currentUsername });
@@ -394,7 +459,6 @@
             renderSurvey();
         }
 
-        /* ========== 载入我的提交（回显） ========== */
         async function loadMyResponse() {
             try {
                 var res = await apiCall({ action: 'my_response', currentUser: currentUsername });
@@ -411,7 +475,6 @@
             } catch (e) {}
         }
 
-        /* ========== 提交 ========== */
         var resultModal = document.getElementById('resultModal');
         var resultBody = document.getElementById('resultBody');
         function closeResult() { resultModal.classList.remove('show'); }
@@ -427,7 +490,6 @@
                     question: checked[i].value
                 });
             }
-
             submitBtn.disabled = true;
             var oldText = submitBtn.textContent;
             submitBtn.textContent = '提交中…';
@@ -472,11 +534,265 @@
             }
         });
 
+        /* ========== 自由发挥区：内嵌画布 ========== */
+        var canvasLockToken = '';
+        var canvasHeartbeat = null;
+
+        var statusIcon = document.getElementById('canvasStatusIcon');
+        var statusText = document.getElementById('canvasStatusText');
+        var enterBtn = document.getElementById('canvasEnterBtn');
+        var retryBtn = document.getElementById('canvasRetryBtn');
+        var previewImg = document.getElementById('canvasPreview');
+        var editorBox = document.getElementById('canvasEditor');
+
+        function canvasSetStatus(icon, text, showEnter, showRetry) {
+            statusIcon.textContent = icon;
+            statusText.textContent = text;
+            enterBtn.style.display = showEnter ? 'inline-block' : 'none';
+            retryBtn.style.display = showRetry ? 'inline-block' : 'none';
+        }
+        function canvasSetMsg(text, ok) {
+            var m = document.getElementById('canvasMsg');
+            m.textContent = text || '';
+            m.className = 'inline-msg' + (ok ? ' ok' : '');
+        }
+
+        var board = document.getElementById('board');
+        var bctx = board.getContext('2d');
+        board.width = 1200; board.height = 800;
+        var drawing = false, lastPt = null;
+        var brushColor = '#1E293B', brushWidth = 4, erasing = false;
+
+        function applyBrush() {
+            bctx.lineCap = 'round'; bctx.lineJoin = 'round';
+            bctx.lineWidth = brushWidth;
+            bctx.globalCompositeOperation = erasing ? 'destination-out' : 'source-over';
+            bctx.strokeStyle = erasing ? 'rgba(0,0,0,1)' : brushColor;
+            bctx.fillStyle = bctx.strokeStyle;
+        }
+        applyBrush();
+
+        function boardPos(e) {
+            var r = board.getBoundingClientRect();
+            return {
+                x: (e.clientX - r.left) / r.width * board.width,
+                y: (e.clientY - r.top) / r.height * board.height
+            };
+        }
+        board.addEventListener('pointerdown', function (e) {
+            e.preventDefault();
+            drawing = true; lastPt = boardPos(e);
+            try { board.setPointerCapture(e.pointerId); } catch (err) {}
+            applyBrush();
+            bctx.beginPath();
+            bctx.arc(lastPt.x, lastPt.y, brushWidth / 2, 0, Math.PI * 2);
+            bctx.fill();
+        });
+        board.addEventListener('pointermove', function (e) {
+            if (!drawing) return;
+            var p = boardPos(e);
+            bctx.beginPath();
+            bctx.moveTo(lastPt.x, lastPt.y);
+            bctx.lineTo(p.x, p.y);
+            bctx.stroke();
+            lastPt = p;
+        });
+        function endBoardDraw() { drawing = false; lastPt = null; }
+        board.addEventListener('pointerup', endBoardDraw);
+        board.addEventListener('pointercancel', endBoardDraw);
+
+        var swatches = document.querySelectorAll('.swatch');
+        swatches.forEach(function (s) {
+            s.addEventListener('click', function () {
+                swatches.forEach(function (x) { x.classList.remove('active'); });
+                s.classList.add('active');
+                brushColor = s.getAttribute('data-color');
+                erasing = false;
+                document.getElementById('canvasEraserBtn').classList.remove('active');
+                applyBrush();
+            });
+        });
+        document.getElementById('customCanvasColor').addEventListener('input', function (e) {
+            brushColor = e.target.value;
+            erasing = false;
+            document.getElementById('canvasEraserBtn').classList.remove('active');
+            applyBrush();
+        });
+        document.getElementById('canvasBrushSize').addEventListener('input', function (e) {
+            brushWidth = parseInt(e.target.value, 10) || 4;
+            applyBrush();
+        });
+        document.getElementById('canvasEraserBtn').addEventListener('click', function () {
+            erasing = !erasing;
+            this.classList.toggle('active', erasing);
+            applyBrush();
+        });
+        document.getElementById('canvasClearBtn').addEventListener('click', function () {
+            if (!confirm('确定清空画布吗？未上传的修改将无法恢复。')) return;
+            bctx.globalCompositeOperation = 'source-over';
+            bctx.clearRect(0, 0, board.width, board.height);
+            applyBrush();
+        });
+
+        function exportBoardImage() {
+            var tmp = document.createElement('canvas');
+            tmp.width = board.width; tmp.height = board.height;
+            var t = tmp.getContext('2d');
+            t.fillStyle = '#ffffff';
+            t.fillRect(0, 0, tmp.width, tmp.height);
+            t.drawImage(board, 0, 0);
+            return tmp.toDataURL('image/webp', 0.85);
+        }
+        function loadBoardImage(src, cb) {
+            if (!src) { cb(); return; }
+            var img = new Image();
+            img.onload = function () {
+                bctx.globalCompositeOperation = 'source-over';
+                bctx.drawImage(img, 0, 0, board.width, board.height);
+                applyBrush();
+                cb();
+            };
+            img.onerror = cb;
+            img.src = src;
+        }
+
+        function startCanvasHeartbeat() {
+            stopCanvasHeartbeat();
+            canvasHeartbeat = setInterval(async function () {
+                if (!canvasLockToken) return;
+                var r = await canvasApi({ action: 'renew', currentUser: currentUsername, token: canvasLockToken });
+                if (!r.ok || !r.granted) {
+                    stopCanvasHeartbeat();
+                    canvasLockToken = '';
+                    editorBox.style.display = 'none';
+                    canvasSetStatus('⏰', '画布锁已失效，请重新获取。', false, true);
+                }
+            }, 60000);
+        }
+        function stopCanvasHeartbeat() {
+            if (canvasHeartbeat) { clearInterval(canvasHeartbeat); canvasHeartbeat = null; }
+        }
+        async function releaseCanvasLock() {
+            stopCanvasHeartbeat();
+            if (!canvasLockToken) return;
+            var t = canvasLockToken; canvasLockToken = '';
+            try {
+                await canvasApi({ action: 'release', currentUser: currentUsername, token: t });
+            } catch (e) {}
+        }
+
+        function enterCanvasEditor(token, image) {
+            canvasLockToken = token;
+            canvasSetStatus('', '', false, false);
+            editorBox.style.display = 'block';
+            canvasSetMsg('你已锁定画布，其他人暂时无法进入。上传或放弃后才会解锁。', true);
+            loadBoardImage(image, startCanvasHeartbeat);
+        }
+
+        async function initCanvas() {
+            canvasSetStatus('⏳', '正在检查画布状态…', false, false);
+            editorBox.style.display = 'none';
+            try {
+                var d = await canvasApi({ action: 'state' });
+                if (!d.ok) throw new Error(d.msg || '加载失败');
+                if (d.image) { previewImg.src = d.image; previewImg.style.display = 'block'; }
+                else { previewImg.style.display = 'none'; }
+
+                if (d.status === 'busy') {
+                    var who = d.holder === currentUsername
+                        ? '你已在另一个窗口打开画布，请先关闭或上传'
+                        : (d.holderName || '某位同学');
+                    canvasSetStatus('🔒', '画布被占用：' + who + ' 正在创作，稍后再试。', false, true);
+                    return;
+                }
+                var owner = d.updatedBy ? ('（上次由 ' + d.updatedBy + ' 上传）') : '';
+                canvasSetStatus('✨', '画布空闲' + owner + '，点击下方开始创作。', true, false);
+            } catch (err) {
+                canvasSetStatus('❌', '画布状态加载失败：' + err.message, false, true);
+            }
+        }
+
+        enterBtn.addEventListener('click', async function () {
+            enterBtn.disabled = true;
+            canvasSetStatus('⏳', '正在获取画布锁…', false, false);
+            try {
+                var d = await canvasApi({ action: 'state' });
+                if (!d.ok) throw new Error(d.msg || '加载失败');
+                if (d.status === 'busy') {
+                    var who = d.holder === currentUsername
+                        ? '你已在另一个窗口打开画布'
+                        : (d.holderName || '某位同学');
+                    canvasSetStatus('🔒', who + ' 正在创作，稍后再试。', false, true);
+                    return;
+                }
+                var r = await canvasApi({
+                    action: 'acquire',
+                    currentUser: currentUsername,
+                    displayName: displayName || displayNameOf(currentUsername)
+                });
+                if (!r.ok) throw new Error(r.msg || '获取锁失败');
+                if (!r.granted) {
+                    var name = r.holder === currentUsername
+                        ? '你已在另一个窗口打开画布'
+                        : (r.holderName || '某位同学');
+                    canvasSetStatus('🔒', name + ' 正在创作，稍后再试。', false, true);
+                    return;
+                }
+                enterCanvasEditor(r.token, d.image);
+            } catch (err) {
+                canvasSetStatus('❌', '进入画布失败：' + err.message, false, true);
+            } finally {
+                enterBtn.disabled = false;
+            }
+        });
+
+        retryBtn.addEventListener('click', initCanvas);
+
+        document.getElementById('canvasUploadBtn').addEventListener('click', async function () {
+            if (!canvasLockToken) { canvasSetMsg('锁已失效，请刷新页面重试。'); return; }
+            var btn = this;
+            btn.disabled = true;
+            canvasSetMsg('正在上传…');
+            try {
+                var r = await canvasApi({
+                    action: 'upload',
+                    currentUser: currentUsername,
+                    token: canvasLockToken,
+                    image: exportBoardImage()
+                });
+                if (!r.ok) throw new Error(r.msg || '上传失败');
+                canvasLockToken = '';
+                stopCanvasHeartbeat();
+                editorBox.style.display = 'none';
+                await initCanvas();
+                canvasSetStatus('✅', '上传成功，画布已解锁，其他同学现在可以创作了。', false, false);
+            } catch (err) {
+                canvasSetMsg('❌ ' + err.message + '（锁仍为你保留，可重试）');
+            } finally {
+                btn.disabled = false;
+            }
+        });
+
+        document.getElementById('canvasGiveUpBtn').addEventListener('click', async function () {
+            await releaseCanvasLock();
+            initCanvas();
+        });
+
+        window.addEventListener('pagehide', function () {
+            if (!canvasLockToken) return;
+            try {
+                var payload = JSON.stringify({ action: 'release', currentUser: currentUsername, token: canvasLockToken });
+                var blob = new Blob([payload], { type: 'text/plain;charset=utf-8' });
+                navigator.sendBeacon(CANVAS_URL, blob);
+            } catch (e) {}
+        });
+
         /* ========== 初始化 ========== */
         (async function init() {
             if (!(await checkAccess())) return;
             await loadConfig();
             await loadMyResponse();
+            await initCanvas();
         })();
     </script>
 </body>
