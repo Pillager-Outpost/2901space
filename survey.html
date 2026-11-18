@@ -228,7 +228,7 @@
             <h2 class="section-title">🎨 自由发挥区</h2>
             <div class="canvas-status" id="canvasStatusBox">
                 <span id="canvasStatusIcon">⏳</span>
-                <span id="canvasStatusText">正在检查画布状态…</span>
+                <span id="canvasStatusText">正在查看画布…</span>
                 <button type="button" class="mini-btn" id="canvasEnterBtn" style="display:none;">✏️ 开始创作</button>
                 <button type="button" class="mini-btn" id="canvasRetryBtn" style="display:none;">🔄 重试</button>
             </div>
@@ -246,11 +246,10 @@
                     <span class="canvas-tool-label">粗细</span>
                     <input type="range" id="canvasBrushSize" min="1" max="30" value="4">
                     <button type="button" class="tool-btn" id="canvasEraserBtn">🧽 橡皮</button>
-                    <button type="button" class="tool-btn" id="canvasClearBtn">🗑️ 清空重画</button>
                 </div>
                 <div class="canvas-wrap"><canvas id="board"></canvas></div>
                 <div class="canvas-actions">
-                    <button type="button" class="submit-btn" id="canvasUploadBtn">📤 上传并解锁</button>
+                    <button type="button" class="submit-btn" id="canvasSaveBtn">💾 保存画作</button>
                     <button type="button" class="clear-btn" id="canvasGiveUpBtn">放弃修改</button>
                 </div>
                 <div class="inline-msg" id="canvasMsg"></div>
@@ -365,13 +364,8 @@
                 body: JSON.stringify(body)
             }).then(function (r) { return r.json().catch(function () { return {}; }); });
         }
-        function formatTime(s) {
-            var d = new Date(s);
-            if (isNaN(d.getTime())) return s || '—';
-            return d.toLocaleString('zh-CN', { year:'numeric', month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit', hour12:false });
-        }
 
-        /* ========== 问卷部分（原有逻辑，不变） ========== */
+        /* ========== 问卷部分 ========== */
         var SURVEY_DATA = { title: '生物错题统计', groups: [] };
         var hasSubmitted = false;
 
@@ -481,61 +475,8 @@
         document.getElementById('closeResultBtn').addEventListener('click', closeResult);
         resultModal.addEventListener('click', function (e) { if (e.target === resultModal) closeResult(); });
 
-        submitBtn.addEventListener('click', async function () {
-            var checked = document.querySelectorAll('.q-chip input:checked');
-            var selected = [];
-            for (var i = 0; i < checked.length; i++) {
-                selected.push({
-                    group: checked[i].getAttribute('data-group'),
-                    question: checked[i].value
-                });
-            }
-            submitBtn.disabled = true;
-            var oldText = submitBtn.textContent;
-            submitBtn.textContent = '提交中…';
-            try {
-                var res = await apiCall({
-                    action: 'submit',
-                    currentUser: currentUsername,
-                    selected: selected,
-                    displayName: safeGet('displayName') || displayNameOf(currentUsername)
-                });
-                var data = await res.json().catch(function () { return {}; });
-                if (!res.ok || !data.ok) throw new Error(data.msg || ('提交失败：' + res.status));
-
-                hasSubmitted = true;
-                submitBtn.textContent = '💾 更新提交';
-                savedTip.style.display = 'block';
-                savedTip.textContent = '✅ 已保存，更新后会覆盖原记录。';
-
-                var byGroup = {};
-                selected.forEach(function (s) {
-                    if (!byGroup[s.group]) byGroup[s.group] = [];
-                    byGroup[s.group].push(s.question);
-                });
-                resultBody.innerHTML = '';
-                SURVEY_DATA.groups.forEach(function (g) {
-                    var qs = byGroup[g.id];
-                    if (!qs || !qs.length) return;
-                    var row = el('div', 'result-group');
-                    row.appendChild(el('div', 'result-group-name', g.name));
-                    var chips = el('div', 'result-chips');
-                    qs.forEach(function (q) { chips.appendChild(el('span', 'result-chip', q)); });
-                    row.appendChild(chips);
-                    resultBody.appendChild(row);
-                });
-                if (!resultBody.children.length) resultBody.appendChild(el('div', 'empty-hint', '本次没有勾选任何薄弱题号。'));
-                resultModal.classList.add('show');
-            } catch (err) {
-                alert('❌ 提交失败：' + err.message);
-                submitBtn.textContent = oldText;
-            } finally {
-                updateCount();
-            }
-        });
-
         /* ========== 自由发挥区：内嵌画布 ========== */
-        var canvasLockToken = '';
+        var canvasToken = '';
         var canvasHeartbeat = null;
 
         var statusIcon = document.getElementById('canvasStatusIcon');
@@ -627,12 +568,6 @@
             this.classList.toggle('active', erasing);
             applyBrush();
         });
-        document.getElementById('canvasClearBtn').addEventListener('click', function () {
-            if (!confirm('确定清空画布吗？未上传的修改将无法恢复。')) return;
-            bctx.globalCompositeOperation = 'source-over';
-            bctx.clearRect(0, 0, board.width, board.height);
-            applyBrush();
-        });
 
         function exportBoardImage() {
             var tmp = document.createElement('canvas');
@@ -659,38 +594,67 @@
         function startCanvasHeartbeat() {
             stopCanvasHeartbeat();
             canvasHeartbeat = setInterval(async function () {
-                if (!canvasLockToken) return;
-                var r = await canvasApi({ action: 'renew', currentUser: currentUsername, token: canvasLockToken });
+                if (!canvasToken) return;
+                var r = await canvasApi({ action: 'renew', currentUser: currentUsername, token: canvasToken });
                 if (!r.ok || !r.granted) {
                     stopCanvasHeartbeat();
-                    canvasLockToken = '';
+                    canvasToken = '';
                     editorBox.style.display = 'none';
-                    canvasSetStatus('⏰', '画布锁已失效，请重新获取。', false, true);
+                    canvasSetStatus('⏰', '你的绘画时间到了，请重新进入。', false, true);
                 }
             }, 60000);
         }
         function stopCanvasHeartbeat() {
             if (canvasHeartbeat) { clearInterval(canvasHeartbeat); canvasHeartbeat = null; }
         }
-        async function releaseCanvasLock() {
+        async function releaseCanvas() {
             stopCanvasHeartbeat();
-            if (!canvasLockToken) return;
-            var t = canvasLockToken; canvasLockToken = '';
+            if (!canvasToken) return;
+            var t = canvasToken; canvasToken = '';
             try {
                 await canvasApi({ action: 'release', currentUser: currentUsername, token: t });
             } catch (e) {}
         }
 
+        // 自动保存画布：供「保存画作」和提交统计共用
+        async function saveCanvas(auto) {
+            if (!canvasToken) return { saved: false, err: '' };
+            try {
+                var r = await canvasApi({
+                    action: 'upload',
+                    currentUser: currentUsername,
+                    token: canvasToken,
+                    image: exportBoardImage()
+                });
+                if (!r.ok) throw new Error(r.msg || '画作保存失败');
+                canvasToken = '';
+                stopCanvasHeartbeat();
+                editorBox.style.display = 'none';
+                var d = await canvasApi({ action: 'state' });
+                if (d.ok && d.image) { previewImg.src = d.image; previewImg.style.display = 'block'; }
+                if (!auto) canvasSetStatus('✅', '作品已保存，其他同学现在可以创作了。', false, false);
+                return { saved: true, err: '' };
+            } catch (err) {
+                if (!auto) canvasSetMsg('❌ ' + err.message + '（你的画作还在，可重试）');
+                return { saved: false, err: err.message };
+            }
+        }
+
         function enterCanvasEditor(token, image) {
-            canvasLockToken = token;
+            canvasToken = token;
             canvasSetStatus('', '', false, false);
             editorBox.style.display = 'block';
-            canvasSetMsg('你已锁定画布，其他人暂时无法进入。上传或放弃后才会解锁。', true);
+            canvasSetMsg('你现在可以画画了，其他人暂时无法进入。保存画作或提交统计后，别人就能进入。', true);
             loadBoardImage(image, startCanvasHeartbeat);
         }
 
+        function busyText(holder, name) {
+            if (holder === currentUsername) return '你已在另一个窗口打开画布，请先关闭。';
+            return '画布正在被 ' + (name || '某位同学') + ' 使用，稍后再试。';
+        }
+
         async function initCanvas() {
-            canvasSetStatus('⏳', '正在检查画布状态…', false, false);
+            canvasSetStatus('⏳', '正在查看画布…', false, false);
             editorBox.style.display = 'none';
             try {
                 var d = await canvasApi({ action: 'state' });
@@ -699,14 +663,10 @@
                 else { previewImg.style.display = 'none'; }
 
                 if (d.status === 'busy') {
-                    var who = d.holder === currentUsername
-                        ? '你已在另一个窗口打开画布，请先关闭或上传'
-                        : (d.holderName || '某位同学');
-                    canvasSetStatus('🔒', '画布被占用：' + who + ' 正在创作，稍后再试。', false, true);
+                    canvasSetStatus('🔒', busyText(d.holder, d.holderName), false, true);
                     return;
                 }
-                var owner = d.updatedBy ? ('（上次由 ' + d.updatedBy + ' 上传）') : '';
-                canvasSetStatus('✨', '画布空闲' + owner + '，点击下方开始创作。', true, false);
+                canvasSetStatus('✨', '画布空闲，点击下方开始创作。', true, false);
             } catch (err) {
                 canvasSetStatus('❌', '画布状态加载失败：' + err.message, false, true);
             }
@@ -714,15 +674,12 @@
 
         enterBtn.addEventListener('click', async function () {
             enterBtn.disabled = true;
-            canvasSetStatus('⏳', '正在获取画布锁…', false, false);
+            canvasSetStatus('⏳', '正在进入画布…', false, false);
             try {
                 var d = await canvasApi({ action: 'state' });
                 if (!d.ok) throw new Error(d.msg || '加载失败');
                 if (d.status === 'busy') {
-                    var who = d.holder === currentUsername
-                        ? '你已在另一个窗口打开画布'
-                        : (d.holderName || '某位同学');
-                    canvasSetStatus('🔒', who + ' 正在创作，稍后再试。', false, true);
+                    canvasSetStatus('🔒', busyText(d.holder, d.holderName), false, true);
                     return;
                 }
                 var r = await canvasApi({
@@ -730,12 +687,9 @@
                     currentUser: currentUsername,
                     displayName: displayName || displayNameOf(currentUsername)
                 });
-                if (!r.ok) throw new Error(r.msg || '获取锁失败');
+                if (!r.ok) throw new Error(r.msg || '进入画布失败');
                 if (!r.granted) {
-                    var name = r.holder === currentUsername
-                        ? '你已在另一个窗口打开画布'
-                        : (r.holderName || '某位同学');
-                    canvasSetStatus('🔒', name + ' 正在创作，稍后再试。', false, true);
+                    canvasSetStatus('🔒', busyText(r.holder, r.holderName), false, true);
                     return;
                 }
                 enterCanvasEditor(r.token, d.image);
@@ -748,43 +702,86 @@
 
         retryBtn.addEventListener('click', initCanvas);
 
-        document.getElementById('canvasUploadBtn').addEventListener('click', async function () {
-            if (!canvasLockToken) { canvasSetMsg('锁已失效，请刷新页面重试。'); return; }
-            var btn = this;
-            btn.disabled = true;
-            canvasSetMsg('正在上传…');
-            try {
-                var r = await canvasApi({
-                    action: 'upload',
-                    currentUser: currentUsername,
-                    token: canvasLockToken,
-                    image: exportBoardImage()
-                });
-                if (!r.ok) throw new Error(r.msg || '上传失败');
-                canvasLockToken = '';
-                stopCanvasHeartbeat();
-                editorBox.style.display = 'none';
-                await initCanvas();
-                canvasSetStatus('✅', '上传成功，画布已解锁，其他同学现在可以创作了。', false, false);
-            } catch (err) {
-                canvasSetMsg('❌ ' + err.message + '（锁仍为你保留，可重试）');
-            } finally {
-                btn.disabled = false;
-            }
-        });
+        document.getElementById('canvasSaveBtn').addEventListener('click', function () { saveCanvas(false); });
 
         document.getElementById('canvasGiveUpBtn').addEventListener('click', async function () {
-            await releaseCanvasLock();
+            await releaseCanvas();
             initCanvas();
         });
 
         window.addEventListener('pagehide', function () {
-            if (!canvasLockToken) return;
+            if (!canvasToken) return;
             try {
-                var payload = JSON.stringify({ action: 'release', currentUser: currentUsername, token: canvasLockToken });
+                var payload = JSON.stringify({ action: 'release', currentUser: currentUsername, token: canvasToken });
                 var blob = new Blob([payload], { type: 'text/plain;charset=utf-8' });
                 navigator.sendBeacon(CANVAS_URL, blob);
             } catch (e) {}
+        });
+
+        /* ========== 提交统计（自动带上画作） ========== */
+        submitBtn.addEventListener('click', async function () {
+            var checked = document.querySelectorAll('.q-chip input:checked');
+            var selected = [];
+            for (var i = 0; i < checked.length; i++) {
+                selected.push({
+                    group: checked[i].getAttribute('data-group'),
+                    question: checked[i].value
+                });
+            }
+
+            submitBtn.disabled = true;
+            var oldText = submitBtn.textContent;
+            submitBtn.textContent = '提交中…';
+
+            // 如果正在画画，先自动保存画作
+            var artResult = { saved: false, err: '' };
+            if (canvasToken) artResult = await saveCanvas(true);
+
+            try {
+                var res = await apiCall({
+                    action: 'submit',
+                    currentUser: currentUsername,
+                    selected: selected,
+                    displayName: safeGet('displayName') || displayNameOf(currentUsername)
+                });
+                var data = await res.json().catch(function () { return {}; });
+                if (!res.ok || !data.ok) throw new Error(data.msg || ('提交失败：' + res.status));
+
+                hasSubmitted = true;
+                submitBtn.textContent = '💾 更新提交';
+                savedTip.style.display = 'block';
+                savedTip.textContent = '✅ 已保存，更新后会覆盖原记录。';
+
+                var byGroup = {};
+                selected.forEach(function (s) {
+                    if (!byGroup[s.group]) byGroup[s.group] = [];
+                    byGroup[s.group].push(s.question);
+                });
+                resultBody.innerHTML = '';
+                SURVEY_DATA.groups.forEach(function (g) {
+                    var qs = byGroup[g.id];
+                    if (!qs || !qs.length) return;
+                    var row = el('div', 'result-group');
+                    row.appendChild(el('div', 'result-group-name', g.name));
+                    var chips = el('div', 'result-chips');
+                    qs.forEach(function (q) { chips.appendChild(el('span', 'result-chip', q)); });
+                    row.appendChild(chips);
+                    resultBody.appendChild(row);
+                });
+                if (!resultBody.children.length) resultBody.appendChild(el('div', 'empty-hint', '本次没有勾选任何薄弱题号。'));
+
+                if (artResult.saved) {
+                    canvasSetStatus('✅', '统计和画作都已保存，其他同学现在可以创作了。', false, false);
+                } else if (artResult.err) {
+                    canvasSetStatus('⚠️', '统计已保存，但画作保存失败：' + artResult.err, false, true);
+                }
+                resultModal.classList.add('show');
+            } catch (err) {
+                alert('❌ 提交失败：' + err.message);
+                submitBtn.textContent = oldText;
+            } finally {
+                updateCount();
+            }
         });
 
         /* ========== 初始化 ========== */
