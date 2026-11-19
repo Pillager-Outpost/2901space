@@ -430,19 +430,44 @@
     }
     body.prank-mode #cardWrap { will-change: transform; }
 
-    /* 齿轮（设置按钮）在整活期间持续转动 + 轻微摆动 */
+    /* 恢复原状状态下，按钮自己也转 */
+    body.prank-mode #prankBtn {
+        animation: btnSpin 4.5s linear infinite;
+    }
+    body.prank-mode #prankBtn:hover { transform: none; }
+    @keyframes btnSpin {
+        0%   { transform: rotate(0deg)    translateY(0)    scale(1); }
+        50%  { transform: rotate(-180deg) translateY(-2px) scale(1.03); }
+        100% { transform: rotate(-360deg) translateY(0)    scale(1); }
+    }
+
+    /* 齿轮（设置按钮）持续转动；--gx/--gy 由 JS 更新，实现飞出原卡片 */
     body.prank-mode .settings-btn {
         animation: gearSpin 4s linear infinite;
     }
     body.prank-mode .settings-btn:hover { transform: none; }
     @keyframes gearSpin {
-        0%   { transform: rotate(0deg)   translateY(0); }
-        50%  { transform: rotate(180deg) translateY(-2px); }
-        100% { transform: rotate(360deg) translateY(0); }
+        0%   { transform: translate3d(var(--gx, 0px), var(--gy, 0px), 0) rotate(0deg)   translateY(0); }
+        50%  { transform: translate3d(var(--gx, 0px), var(--gy, 0px), 0) rotate(180deg) translateY(-2px); }
+        100% { transform: translate3d(var(--gx, 0px), var(--gy, 0px), 0) rotate(360deg) translateY(0); }
     }
 
     /* 物理模式开启时的轻微描边提示（不用 filter，避免逐帧重绘） */
     body.physics-on .menu-item { border-color: var(--accent); }
+
+    /* ========== 从别的界面飞进来的访客卡片 ========== */
+    .visitor-card {
+        position: fixed !important;
+        left: 0 !important;
+        top: 0 !important;
+        margin: 0 !important;
+        z-index: 900;
+        pointer-events: none !important;
+        cursor: default !important;
+        opacity: 0;
+        will-change: transform, opacity;
+        transform-origin: 50% 50%;
+    }
 
     @media (max-width: 600px) {
         body { padding: 16px; }
@@ -952,14 +977,16 @@
             }, 1000);
         }
 
-        // ========== 神秘的按钮：设备评估 + 物理模拟（静止补动能 / 倾倒 / 回正 / 可点击） ==========
+        // ========== 神秘的按钮：评估 / 物理 / 补动能 / 倾倒回正 / 齿轮飞出 / 访客卡片 ==========
         var prankBtn = document.getElementById('prankBtn');
         var menuEl = document.getElementById('menuContainer');
         var prankOn = false;
         var prankBusy = false;
         var prankItems = [];
+        var visitors = [];
         var prankRAF = null;
         var prankLast = 0;
+        var visitorNextAt = 0;
         var physicsAllowed = false;
 
         var IDLE_LIMIT = 2000;   // 静止 2 秒就补给动能
@@ -1014,7 +1041,10 @@
 
         function initPrankItems() {
             var wrap = document.getElementById('cardWrap');
-            var nodes = [wrap].concat(Array.prototype.slice.call(menuEl.querySelectorAll('.menu-item')));
+            var gear = document.getElementById('settingsBtn');
+            gear.style.removeProperty('--gx');
+            gear.style.removeProperty('--gy');
+            var nodes = [wrap, gear].concat(Array.prototype.slice.call(menuEl.querySelectorAll('.menu-item')));
             prankItems = [];
             var now = performance.now();
 
@@ -1022,7 +1052,28 @@
                 el.style.transform = '';
                 el.style.transformOrigin = '';
                 var r = el.getBoundingClientRect();
+                var isGear = (el === gear);
                 var isBig = (el === wrap);
+
+                var base = {
+                    left: r.left, right: r.right,
+                    top: r.top, bottom: r.bottom,
+                    w: r.width, h: r.height
+                };
+
+                // 齿轮：旋转交给 CSS，位移交给 --gx/--gy
+                if (isGear) {
+                    prankItems.push({
+                        el: el, isGear: true, base: base,
+                        x: 0, y: 0, vx: 0, vy: 0,
+                        e: 0.7, mass: 0.6,
+                        escaping: false, returning: false,
+                        escapeAt: now + prankRand(4000, 9000),
+                        returnAt: Infinity
+                    });
+                    return;
+                }
+
                 var physical = physicsAllowed && Math.random() < (isBig ? 0.5 : 0.65);
                 var mode = physical
                     ? (Math.random() < 0.55 ? 'gravity' : 'drift')
@@ -1040,11 +1091,7 @@
 
                 prankItems.push({
                     el: el,
-                    base: {
-                        left: r.left, right: r.right,
-                        top: r.top, bottom: r.bottom,
-                        w: r.width, h: r.height
-                    },
+                    base: base,
                     x: 0, y: 0,
                     rot: rot, av: av,
                     mass: isBig ? 2.4 : 1,
@@ -1068,6 +1115,37 @@
             });
 
             document.body.classList.toggle('physics-on', physicsAllowed);
+        }
+
+        // 齿轮：偶尔飞出原卡片，过一会弹回来
+        function handleGear(it, now, dt) {
+            if (!it.escaping && !it.returning && now >= it.escapeAt) {
+                it.escaping = true;
+                it.vx = prankRand(-280, 280);
+                if (Math.abs(it.vx) < 70) it.vx = (Math.random() < 0.5 ? -1 : 1) * prankRand(120, 220);
+                it.vy = prankRand(-280, -100);          // 多数时候往上蹦出去
+                it.returnAt = now + prankRand(3200, 5200);
+            }
+            if (it.escaping && !it.returning && now >= it.returnAt) {
+                it.escaping = false;
+                it.returning = true;
+            }
+            if (it.returning) {
+                var gk = 7, gc = 5;
+                it.vx += (-gk * it.x - gc * it.vx) * dt;
+                it.vy += (-gk * it.y - gc * it.vy) * dt;
+                if (Math.abs(it.x) < 1 && Math.abs(it.y) < 1 &&
+                    Math.abs(it.vx) < 8 && Math.abs(it.vy) < 8) {
+                    it.x = 0; it.y = 0; it.vx = 0; it.vy = 0;
+                    it.returning = false;
+                    it.escapeAt = now + prankRand(6000, 11000);
+                }
+            } else {
+                it.vx *= (1 - 0.25 * dt);
+                it.vy *= (1 - 0.25 * dt);
+                it.x += it.vx * dt;
+                it.y += it.vy * dt;
+            }
         }
 
         function prankBounds(item) {
@@ -1115,6 +1193,107 @@
             }
         }
 
+        // 倾斜越大，碰撞间距留得越宽，避免旋转后视觉重叠
+        function gapOf(a, b) {
+            return 10 + Math.min(26, (Math.abs(a.rot) + Math.abs(b.rot)) / 10);
+        }
+
+        // ========== 别的界面飞进来的访客卡片（10 秒内必走、不可点击） ==========
+        var VISITOR_LABELS = [
+            '📢 通知板', '🖼️ 2901 图库', '📚 生物错题统计',
+            '📊 生物错题统计结果', '🎨 自由发挥区一览', '🥚 彩蛋收集站',
+            '📝 发布生物错题统计', '🛡️ 审核用户', '👥 用户管理'
+        ];
+
+        function spawnVisitor(now) {
+            if (visitors.length >= 3) return;
+            var src = menuEl.querySelector('.menu-item');
+            if (!src) return;
+            var el = src.cloneNode(true);
+            el.removeAttribute('href');
+            el.removeAttribute('id');
+            el.classList.add('visitor-card');
+            el.style.pointerEvents = 'none';          // 不能点击
+            document.body.appendChild(el);
+
+            var w = el.offsetWidth || 160;
+            var h = el.offsetHeight || 54;
+            var fromLeft = Math.random() < 0.5;
+            var x = fromLeft ? -w - 40 : window.innerWidth + 40;
+            var y = prankRand(60, Math.max(80, window.innerHeight - h - 60));
+
+            var label = VISITOR_LABELS[Math.floor(Math.random() * VISITOR_LABELS.length)];
+            var parts = label.split(' ');
+            var iconEl = el.querySelector('.icon');
+            var textEl = el.querySelector('.text');
+            var arrowEl = el.querySelector('.arrow');
+            if (iconEl) iconEl.textContent = parts[0];
+            if (textEl) textEl.textContent = parts.slice(1).join(' ');
+            if (arrowEl) arrowEl.textContent = '↗';
+
+            visitors.push({
+                el: el, w: w, h: h,
+                x: x, y: y,
+                vx: fromLeft ? prankRand(140, 240) : -prankRand(140, 240),
+                vy: prankRand(-40, 40),
+                rot: prankRand(-14, 14),
+                av: prankRand(-45, 45),
+                targetX: prankRand(Math.max(20, window.innerWidth * 0.22), window.innerWidth * 0.72),
+                targetY: prankRand(80, Math.max(100, window.innerHeight * 0.72)),
+                bornAt: now,
+                exitAt: now + prankRand(5200, 7800),
+                removeAt: now + 10000,                // 10 秒内一定飞走
+                exiting: false
+            });
+            visitorNextAt = now + prankRand(2600, 4600);
+        }
+
+        function stepVisitors(now, dt) {
+            if (now >= visitorNextAt) spawnVisitor(now);
+            for (var i = visitors.length - 1; i >= 0; i--) {
+                var v = visitors[i];
+
+                if (!v.exiting && now >= v.exitAt) {
+                    v.exiting = true;
+                    var goRight = v.x < window.innerWidth / 2;
+                    v.vx = goRight ? prankRand(200, 340) : -prankRand(200, 340);
+                    v.vy = prankRand(-140, -30);
+                    v.av += prankRand(-90, 90);
+                }
+
+                if (!v.exiting) {
+                    // 朝目标点缓缓靠拢
+                    v.vx += ((v.targetX - v.x) * 0.9 - v.vx) * dt;
+                    v.vy += ((v.targetY - v.y) * 0.9 - v.vy) * dt;
+                } else {
+                    v.vx *= (1 - 0.12 * dt);
+                }
+
+                v.x += v.vx * dt;
+                v.y += v.vy * dt;
+                v.rot += v.av * dt;
+                v.av *= (1 - 0.35 * dt);
+
+                var alpha = 1;
+                if (now - v.bornAt < 400) {
+                    alpha = (now - v.bornAt) / 400;                    // 淡入
+                } else if (v.exiting || now > v.removeAt - 1500) {
+                    alpha = Math.max(0, Math.min((v.removeAt - now) / 1500, 1)); // 淡出
+                }
+                v.el.style.opacity = alpha.toFixed(2);
+                v.el.style.transform =
+                    'translate3d(' + v.x.toFixed(1) + 'px,' + v.y.toFixed(1) + 'px,0) ' +
+                    'rotate(' + v.rot.toFixed(1) + 'deg)';
+
+                var off = v.x < -v.w - 80 || v.x > window.innerWidth + 80 ||
+                          v.y < -v.h - 80 || v.y > window.innerHeight + 80;
+                if (now >= v.removeAt || (v.exiting && off)) {
+                    if (v.el.parentNode) v.el.parentNode.removeChild(v.el);
+                    visitors.splice(i, 1);
+                }
+            }
+        }
+
         function prankStep(now) {
             if (!prankOn) return;
             var dt = (now - prankLast) / 1000;
@@ -1127,6 +1306,9 @@
             // 1. 积分运动 + 静止补动能 + 倾倒/回正 + 位置恢复
             for (i = 0; i < prankItems.length; i++) {
                 it = prankItems[i];
+
+                // 齿轮单独走自己的逻辑
+                if (it.isGear) { handleGear(it, now, dt); continue; }
 
                 // 1a. 静止 2 秒 → 随机补给线动能 + 角动能
                 speed = Math.sqrt(it.vx * it.vx + it.vy * it.vy);
@@ -1229,9 +1411,11 @@
                 }
             }
 
-            // 2. 两两碰撞：分离 + 动量交换，保证不重叠（倾斜时加大间距）
+            // 2. 两两碰撞：分离 + 动量交换（齿轮不参与）
             for (i = 0; i < prankItems.length; i++) {
+                if (prankItems[i].isGear) continue;
                 for (j = i + 1; j < prankItems.length; j++) {
+                    if (prankItems[j].isGear) continue;
                     a = prankItems[i];
                     b = prankItems[j];
                     ra = prankRect(a);
@@ -1263,9 +1447,17 @@
                 }
             }
 
-            // 3. 再夹一次边界，然后只写 transform（含旋转）
+            // 3. 再夹一次边界，然后写 transform
             for (i = 0; i < prankItems.length; i++) {
                 it = prankItems[i];
+
+                // 齿轮用 CSS 动画旋转，这里只更新位移变量
+                if (it.isGear) {
+                    it.el.style.setProperty('--gx', it.x.toFixed(2) + 'px');
+                    it.el.style.setProperty('--gy', it.y.toFixed(2) + 'px');
+                    continue;
+                }
+
                 bounds = prankBounds(it);
                 if (it.x < bounds.minX) { it.x = bounds.minX; it.vx = Math.abs(it.vx) * it.e; }
                 if (it.x > bounds.maxX) { it.x = bounds.maxX; it.vx = -Math.abs(it.vx) * it.e; }
@@ -1276,12 +1468,8 @@
                     'rotate(' + it.rot.toFixed(2) + 'deg)';
             }
 
+            stepVisitors(now, dt);
             prankRAF = requestAnimationFrame(prankStep);
-        }
-
-        // 倾斜越大，碰撞间距留得越宽，避免旋转后视觉重叠
-        function gapOf(a, b) {
-            return 10 + Math.min(26, (Math.abs(a.rot) + Math.abs(b.rot)) / 10);
         }
 
         function stopPrank() {
@@ -1289,8 +1477,16 @@
             prankItems.forEach(function (it) {
                 it.el.style.transform = '';
                 it.el.style.transformOrigin = '';
+                if (it.isGear) {
+                    it.el.style.removeProperty('--gx');
+                    it.el.style.removeProperty('--gy');
+                }
             });
             prankItems = [];
+            visitors.forEach(function (v) {
+                if (v.el.parentNode) v.el.parentNode.removeChild(v.el);
+            });
+            visitors = [];
             document.body.classList.remove('prank-mode');
             document.body.classList.remove('physics-on');
             prankBtn.textContent = '🔮 神秘的按钮';
@@ -1304,6 +1500,7 @@
             prankBtn.textContent = '↩️ 恢复原状';
             prankOn = true;
             prankLast = performance.now();
+            visitorNextAt = prankLast + 1200;
             prankRAF = requestAnimationFrame(prankStep);
             prankBusy = false;
         }
@@ -1322,6 +1519,7 @@
             if (!prankOn) return;
             // 先去掉旋转再测量，避免把倾斜后的包围盒算进基准
             prankItems.forEach(function (it) {
+                if (it.isGear) return;   // 齿轮不参与碰撞，无需重算基准
                 it.el.style.transform = 'translate3d(' + it.x + 'px,' + it.y + 'px,0)';
                 var r = it.el.getBoundingClientRect();
                 it.base = {
