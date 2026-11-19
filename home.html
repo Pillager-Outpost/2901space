@@ -407,7 +407,7 @@
     }
     .egg-hint { font-size: 0.85em; color: var(--text-muted); margin-top: 16px; }
 
-    /* ========== 整活按钮 ========== */
+    /* ========== 神秘的按钮 ========== */
     #prankBtn {
         position: fixed; right: 20px; bottom: 20px;
         display: inline-flex; align-items: center; gap: 6px;
@@ -548,8 +548,8 @@
         </div>
     </div>
 
-    <!-- 整活按钮 -->
-    <button id="prankBtn" title="整活一下">🙃 整活</button>
+    <!-- 神秘的按钮 -->
+    <button id="prankBtn" title="神秘的按钮">🔮 神秘的按钮</button>
 
     <script>
         function safeGet(k){ try { return localStorage.getItem(k); } catch(e){ return null; } }
@@ -952,7 +952,7 @@
             }, 1000);
         }
 
-        // ========== 整活：设备评估 + 随机物理模拟（可恢复、可点击） ==========
+        // ========== 神秘的按钮：设备评估 + 物理模拟（静止补动能 / 倾倒 / 回正 / 可点击） ==========
         var prankBtn = document.getElementById('prankBtn');
         var menuEl = document.getElementById('menuContainer');
         var prankOn = false;
@@ -961,6 +961,9 @@
         var prankRAF = null;
         var prankLast = 0;
         var physicsAllowed = false;
+
+        var IDLE_LIMIT = 2000;   // 静止 2 秒就补给动能
+        var IDLE_SPEED = 18;     // 低于这个速度算“没动”
 
         function prankRand(min, max) { return min + Math.random() * (max - min); }
 
@@ -1016,13 +1019,24 @@
             var now = performance.now();
 
             nodes.forEach(function (el) {
-                el.style.transform = '';   // 先归零再测量
+                el.style.transform = '';
+                el.style.transformOrigin = '';
                 var r = el.getBoundingClientRect();
                 var isBig = (el === wrap);
                 var physical = physicsAllowed && Math.random() < (isBig ? 0.5 : 0.65);
                 var mode = physical
                     ? (Math.random() < 0.55 ? 'gravity' : 'drift')
                     : (Math.random() < 0.5 ? 'drift' : 'fall');
+                var unstable = physicsAllowed && Math.random() < 0.45;
+
+                var rot = 0, av = 0;
+                if (unstable) {
+                    rot = prankRand(2, 4) * (Math.random() < 0.5 ? -1 : 1);
+                    av = prankRand(8, 16) * (Math.random() < 0.5 ? -1 : 1);
+                    el.style.transformOrigin = '50% 100%';   // 重心在底边，像要翻倒
+                } else {
+                    rot = prankRand(-4, 4);
+                }
 
                 prankItems.push({
                     el: el,
@@ -1032,6 +1046,7 @@
                         w: r.width, h: r.height
                     },
                     x: 0, y: 0,
+                    rot: rot, av: av,
                     mass: isBig ? 2.4 : 1,
                     e: physical ? prankRand(0.45, 0.78) : 1,
                     g: (physical && mode === 'gravity') ? prankRand(220, 460) : 0,
@@ -1042,8 +1057,13 @@
                     vy: (mode === 'gravity' || mode === 'fall')
                         ? prankRand(10, 30)
                         : prankRand(-10, 10),
+                    unstable: unstable,
+                    righting: false,
                     recovering: false,
-                    recoverAt: physical ? now + prankRand(5000, 11000) : Infinity
+                    recoverAt: physical ? now + prankRand(5000, 11000) : Infinity,
+                    uprightAt: now + prankRand(3000, 6500),
+                    toppleAgainAt: Infinity,
+                    lastMoveAt: now
                 });
             });
 
@@ -1069,7 +1089,7 @@
             };
         }
 
-        // 沿某一轴做带质量的弹性碰撞响应
+        // 沿某一轴做带质量的弹性碰撞响应，并附带扭转
         function prankCollide(a, b, axis) {
             var pa = axis === 'x' ? a.x + a.base.left + a.base.w / 2 : a.y + a.base.top + a.base.h / 2;
             var pb = axis === 'x' ? b.x + b.base.left + b.base.w / 2 : b.y + b.base.top + b.base.h / 2;
@@ -1087,6 +1107,11 @@
                     a.vy -= j * n / a.mass;
                     b.vy += j * n / b.mass;
                 }
+                var twist = Math.min(55, Math.abs(vrel) * 0.7);
+                if (twist > 2) {
+                    a.av += twist * (n > 0 ? 1 : -1);
+                    b.av -= twist * (n > 0 ? 1 : -1);
+                }
             }
         }
 
@@ -1097,13 +1122,40 @@
             if (dt > 0.05) dt = 0.05;   // 防止切后台回来跳一大步
             if (dt < 0) dt = 0;
 
-            var i, j, it, bounds, a, b, ra, rb;
-            var gap = 10;
+            var i, j, it, bounds, a, b, ra, rb, speed;
 
-            // 1. 积分运动 + 重力 + 到点恢复
+            // 1. 积分运动 + 静止补动能 + 倾倒/回正 + 位置恢复
             for (i = 0; i < prankItems.length; i++) {
                 it = prankItems[i];
 
+                // 1a. 静止 2 秒 → 随机补给线动能 + 角动能
+                speed = Math.sqrt(it.vx * it.vx + it.vy * it.vy);
+                if (speed > IDLE_SPEED || Math.abs(it.av) > 12) {
+                    it.lastMoveAt = now;
+                } else if (!it.recovering && !it.righting && now - it.lastMoveAt > IDLE_LIMIT) {
+                    it.vx += prankRand(-70, 70);
+                    it.vy += prankRand(-55, 50);
+                    it.av += prankRand(-55, 55);
+                    it.lastMoveAt = now;
+                }
+
+                // 1b. 回正后隔一会再次变不稳，准备下一轮倾倒
+                if (!it.righting && !it.unstable && physicsAllowed && now >= it.toppleAgainAt) {
+                    it.unstable = true;
+                    it.rot = prankRand(2, 4) * (Math.random() < 0.5 ? -1 : 1);
+                    it.av = prankRand(8, 16) * (Math.random() < 0.5 ? -1 : 1);
+                    it.uprightAt = now + prankRand(3500, 7000);
+                    it.toppleAgainAt = Infinity;
+                    it.el.style.transformOrigin = '50% 100%';
+                }
+
+                // 1c. 到点开始回正角度
+                if (!it.righting && now >= it.uprightAt &&
+                    (Math.abs(it.rot) > 0.5 || Math.abs(it.av) > 2)) {
+                    it.righting = true;
+                }
+
+                // 1d. 位置恢复（原有逻辑）
                 if (it.phys && !it.recovering && now >= it.recoverAt) {
                     if (Math.random() < 0.65) {
                         it.recovering = true;
@@ -1113,8 +1165,8 @@
                     }
                 }
 
+                // 1e. 位置积分
                 if (it.recovering) {
-                    // 弹簧回家
                     var k = 6, c = 4.2;
                     it.vx += (-k * it.x - c * it.vx) * dt;
                     it.vy += (-k * it.y - c * it.vy) * dt;
@@ -1133,29 +1185,63 @@
                     it.y += it.vy * dt;
                 }
 
+                // 1f. 角度积分：回正弹簧 / 倒立摆倾倒 / 阻尼
+                if (it.righting) {
+                    var target = Math.round(it.rot / 360) * 360;
+                    it.av += (-8 * (it.rot - target) - 5 * it.av) * dt;
+                    it.rot += it.av * dt;
+                    if (Math.abs(it.rot - target) < 0.8 && Math.abs(it.av) < 8) {
+                        it.rot = 0;   // 与 target 只差整圈，视觉无跳变
+                        it.av = 0;
+                        it.righting = false;
+                        it.unstable = false;
+                        it.el.style.transformOrigin = '';
+                        if (physicsAllowed) it.toppleAgainAt = now + prankRand(7000, 13000);
+                    }
+                } else if (it.unstable) {
+                    // 重心不稳：偏得越多，倒得越快
+                    it.av += Math.sin(it.rot * Math.PI / 180) * 55 * dt;
+                    it.av *= (1 - 0.12 * dt);
+                    if (it.av > 220) it.av = 220;
+                    if (it.av < -220) it.av = -220;
+                    it.rot += it.av * dt;
+                } else {
+                    it.av *= (1 - 2 * dt);
+                    it.rot += it.av * dt;
+                }
+
+                // 1g. 边界反弹 + 撞墙带来扭转
                 bounds = prankBounds(it);
-                if (it.x < bounds.minX) { it.x = bounds.minX; it.vx = Math.abs(it.vx) * it.e; }
-                if (it.x > bounds.maxX) { it.x = bounds.maxX; it.vx = -Math.abs(it.vx) * it.e; }
+                if (it.x < bounds.minX) {
+                    it.x = bounds.minX; it.vx = Math.abs(it.vx) * it.e;
+                    it.av += (Math.random() - 0.5) * 30;
+                }
+                if (it.x > bounds.maxX) {
+                    it.x = bounds.maxX; it.vx = -Math.abs(it.vx) * it.e;
+                    it.av += (Math.random() - 0.5) * 30;
+                }
                 if (it.y < bounds.minY) { it.y = bounds.minY; it.vy = Math.abs(it.vy) * it.e; }
                 if (it.y > bounds.maxY) {
                     it.y = bounds.maxY;
                     it.vy = -Math.abs(it.vy) * it.e;
                     it.vx *= 0.82;                       // 地面摩擦
+                    it.av += (Math.random() - 0.5) * 24;
                 }
             }
 
-            // 2. 两两碰撞：分离 + 动量交换，保证不重叠
+            // 2. 两两碰撞：分离 + 动量交换，保证不重叠（倾斜时加大间距）
             for (i = 0; i < prankItems.length; i++) {
                 for (j = i + 1; j < prankItems.length; j++) {
                     a = prankItems[i];
                     b = prankItems[j];
                     ra = prankRect(a);
                     rb = prankRect(b);
+                    var effGap = gapOf(a, b);
                     var ox = Math.min(ra.right, rb.right) - Math.max(ra.left, rb.left);
                     var oy = Math.min(ra.bottom, rb.bottom) - Math.max(ra.top, rb.top);
-                    if (ox > -gap && oy > -gap) {
-                        var pushX = ox + gap;
-                        var pushY = oy + gap;
+                    if (ox > -effGap && oy > -effGap) {
+                        var pushX = ox + effGap;
+                        var pushY = oy + effGap;
                         if (pushX > 0 && pushY > 0) {
                             if (pushX < pushY) {
                                 prankCollide(a, b, 'x');
@@ -1177,7 +1263,7 @@
                 }
             }
 
-            // 3. 再夹一次边界，然后只写 transform
+            // 3. 再夹一次边界，然后只写 transform（含旋转）
             for (i = 0; i < prankItems.length; i++) {
                 it = prankItems[i];
                 bounds = prankBounds(it);
@@ -1185,19 +1271,29 @@
                 if (it.x > bounds.maxX) { it.x = bounds.maxX; it.vx = -Math.abs(it.vx) * it.e; }
                 if (it.y < bounds.minY) { it.y = bounds.minY; it.vy = Math.abs(it.vy) * it.e; }
                 if (it.y > bounds.maxY) { it.y = bounds.maxY; it.vy = -Math.abs(it.vy) * it.e; }
-                it.el.style.transform = 'translate3d(' + it.x.toFixed(2) + 'px,' + it.y.toFixed(2) + 'px,0)';
+                it.el.style.transform =
+                    'translate3d(' + it.x.toFixed(2) + 'px,' + it.y.toFixed(2) + 'px,0) ' +
+                    'rotate(' + it.rot.toFixed(2) + 'deg)';
             }
 
             prankRAF = requestAnimationFrame(prankStep);
         }
 
+        // 倾斜越大，碰撞间距留得越宽，避免旋转后视觉重叠
+        function gapOf(a, b) {
+            return 10 + Math.min(26, (Math.abs(a.rot) + Math.abs(b.rot)) / 10);
+        }
+
         function stopPrank() {
             if (prankRAF) { cancelAnimationFrame(prankRAF); prankRAF = null; }
-            prankItems.forEach(function (it) { it.el.style.transform = ''; });
+            prankItems.forEach(function (it) {
+                it.el.style.transform = '';
+                it.el.style.transformOrigin = '';
+            });
             prankItems = [];
             document.body.classList.remove('prank-mode');
             document.body.classList.remove('physics-on');
-            prankBtn.textContent = '🙃 整活';
+            prankBtn.textContent = '🔮 神秘的按钮';
             prankOn = false;
         }
 
@@ -1224,8 +1320,9 @@
 
         window.addEventListener('resize', function () {
             if (!prankOn) return;
-            // 窗口变化后，用“当前视觉位置 - 当前偏移”重算基准，避免越界
+            // 先去掉旋转再测量，避免把倾斜后的包围盒算进基准
             prankItems.forEach(function (it) {
+                it.el.style.transform = 'translate3d(' + it.x + 'px,' + it.y + 'px,0)';
                 var r = it.el.getBoundingClientRect();
                 it.base = {
                     left: r.left - it.x, right: r.right - it.x,
