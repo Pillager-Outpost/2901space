@@ -428,6 +428,21 @@
         transition: background 0.2s, border-color 0.2s, color var(--t-color);
         will-change: transform;
     }
+    body.prank-mode #cardWrap { will-change: transform; }
+
+    /* 齿轮（设置按钮）在整活期间持续转动 + 轻微摆动 */
+    body.prank-mode .settings-btn {
+        animation: gearSpin 4s linear infinite;
+    }
+    body.prank-mode .settings-btn:hover { transform: none; }
+    @keyframes gearSpin {
+        0%   { transform: rotate(0deg)   translateY(0); }
+        50%  { transform: rotate(180deg) translateY(-2px); }
+        100% { transform: rotate(360deg) translateY(0); }
+    }
+
+    /* 物理模式开启时的轻微描边提示（不用 filter，避免逐帧重绘） */
+    body.physics-on .menu-item { border-color: var(--accent); }
 
     @media (max-width: 600px) {
         body { padding: 16px; }
@@ -937,23 +952,78 @@
             }, 1000);
         }
 
-        // ========== 整活：每个菜单项各自持续运动（不重叠、可点击） ==========
+        // ========== 整活：设备评估 + 随机物理模拟（可恢复、可点击） ==========
         var prankBtn = document.getElementById('prankBtn');
         var menuEl = document.getElementById('menuContainer');
         var prankOn = false;
+        var prankBusy = false;
         var prankItems = [];
         var prankRAF = null;
         var prankLast = 0;
+        var physicsAllowed = false;
 
         function prankRand(min, max) { return min + Math.random() * (max - min); }
 
+        // 简单设备性能评估：CPU 核心数 + 内存 + 实测帧率 + 减少动画偏好
+        function evaluateDevice() {
+            return new Promise(function (resolve) {
+                var cores = navigator.hardwareConcurrency || 2;
+                var memGB = navigator.deviceMemory || 2;
+                var score = 0;
+
+                if (cores >= 8) score += 3;
+                else if (cores >= 4) score += 2;
+                else if (cores >= 2) score += 1;
+
+                if (memGB >= 8) score += 3;
+                else if (memGB >= 4) score += 2;
+                else if (memGB >= 2) score += 1;
+
+                try {
+                    if (matchMedia('(prefers-reduced-motion: reduce)').matches) score -= 4;
+                } catch (e) {}
+
+                var frames = 0;
+                var start = performance.now();
+                var done = false;
+                function finish() {
+                    if (done) return;
+                    done = true;
+                    var fps = frames * 1000 / Math.max(1, performance.now() - start);
+                    if (fps >= 50) score += 2;
+                    else if (fps >= 35) score += 1;
+                    else score -= 2;
+                    resolve(score >= 4);
+                }
+                function tick(now) {
+                    frames++;
+                    if (now - start >= 400) finish();
+                    else requestAnimationFrame(tick);
+                }
+                requestAnimationFrame(tick);
+                setTimeout(finish, 900); // 后台标签页兜底
+            });
+        }
+        var deviceCheck = evaluateDevice().then(function (ok) {
+            physicsAllowed = ok;
+            return ok;
+        });
+
         function initPrankItems() {
-            var nodes = menuEl.querySelectorAll('.menu-item');
+            var wrap = document.getElementById('cardWrap');
+            var nodes = [wrap].concat(Array.prototype.slice.call(menuEl.querySelectorAll('.menu-item')));
             prankItems = [];
+            var now = performance.now();
+
             nodes.forEach(function (el) {
-                el.style.transform = '';   // 先归零再测量，避免把当前偏移算进基准
+                el.style.transform = '';   // 先归零再测量
                 var r = el.getBoundingClientRect();
-                var mode = Math.random() < 0.5 ? 'drift' : 'fall';
+                var isBig = (el === wrap);
+                var physical = physicsAllowed && Math.random() < (isBig ? 0.5 : 0.65);
+                var mode = physical
+                    ? (Math.random() < 0.55 ? 'gravity' : 'drift')
+                    : (Math.random() < 0.5 ? 'drift' : 'fall');
+
                 prankItems.push({
                     el: el,
                     base: {
@@ -962,25 +1032,33 @@
                         w: r.width, h: r.height
                     },
                     x: 0, y: 0,
-                    // 一半左右漂移，一半带下落趋势
-                    vx: mode === 'drift'
-                        ? prankRand(18, 42) * (Math.random() < 0.5 ? -1 : 1)
-                        : prankRand(-8, 8),
-                    vy: mode === 'fall'
-                        ? prankRand(14, 30)
-                        : prankRand(-8, 8)
+                    mass: isBig ? 2.4 : 1,
+                    e: physical ? prankRand(0.45, 0.78) : 1,
+                    g: (physical && mode === 'gravity') ? prankRand(220, 460) : 0,
+                    phys: physical,
+                    vx: (mode === 'drift' || mode === 'fall')
+                        ? prankRand(20, 46) * (Math.random() < 0.5 ? -1 : 1)
+                        : prankRand(-10, 10),
+                    vy: (mode === 'gravity' || mode === 'fall')
+                        ? prankRand(10, 30)
+                        : prankRand(-10, 10),
+                    recovering: false,
+                    recoverAt: physical ? now + prankRand(5000, 11000) : Infinity
                 });
             });
+
+            document.body.classList.toggle('physics-on', physicsAllowed);
         }
 
         function prankBounds(item) {
             var b = item.base;
-            return {
-                minX: 8 - b.left,
-                maxX: window.innerWidth - 8 - b.right,
-                minY: 8 - b.top,
-                maxY: window.innerHeight - 8 - b.bottom
-            };
+            var minX = 8 - b.left;
+            var maxX = window.innerWidth - 8 - b.right;
+            var minY = 8 - b.top;
+            var maxY = window.innerHeight - 8 - b.bottom;
+            if (minX > maxX) { minX = maxX = (minX + maxX) / 2; }
+            if (minY > maxY) { minY = maxY = (minY + maxY) / 2; }
+            return { minX: minX, maxX: maxX, minY: minY, maxY: maxY };
         }
 
         function prankRect(item) {
@@ -991,28 +1069,82 @@
             };
         }
 
+        // 沿某一轴做带质量的弹性碰撞响应
+        function prankCollide(a, b, axis) {
+            var pa = axis === 'x' ? a.x + a.base.left + a.base.w / 2 : a.y + a.base.top + a.base.h / 2;
+            var pb = axis === 'x' ? b.x + b.base.left + b.base.w / 2 : b.y + b.base.top + b.base.h / 2;
+            var n = pa < pb ? 1 : -1;                 // 从 a 指向 b 的法线
+            var va = axis === 'x' ? a.vx : a.vy;
+            var vb = axis === 'x' ? b.vx : b.vy;
+            var vrel = (va - vb) * n;                 // >0 表示正在接近
+            if (vrel > 0) {
+                var e = Math.min(a.e, b.e);
+                var j = (1 + e) * vrel / (1 / a.mass + 1 / b.mass);
+                if (axis === 'x') {
+                    a.vx -= j * n / a.mass;
+                    b.vx += j * n / b.mass;
+                } else {
+                    a.vy -= j * n / a.mass;
+                    b.vy += j * n / b.mass;
+                }
+            }
+        }
+
         function prankStep(now) {
             if (!prankOn) return;
             var dt = (now - prankLast) / 1000;
             prankLast = now;
             if (dt > 0.05) dt = 0.05;   // 防止切后台回来跳一大步
+            if (dt < 0) dt = 0;
 
             var i, j, it, bounds, a, b, ra, rb;
             var gap = 10;
 
-            // 1. 按各自速度移动 + 边界反弹
+            // 1. 积分运动 + 重力 + 到点恢复
             for (i = 0; i < prankItems.length; i++) {
                 it = prankItems[i];
+
+                if (it.phys && !it.recovering && now >= it.recoverAt) {
+                    if (Math.random() < 0.65) {
+                        it.recovering = true;
+                        it.g = 0;
+                    } else {
+                        it.recoverAt = now + prankRand(4000, 8000);
+                    }
+                }
+
+                if (it.recovering) {
+                    // 弹簧回家
+                    var k = 6, c = 4.2;
+                    it.vx += (-k * it.x - c * it.vx) * dt;
+                    it.vy += (-k * it.y - c * it.vy) * dt;
+                    if (Math.abs(it.x) < 1 && Math.abs(it.y) < 1 &&
+                        Math.abs(it.vx) < 6 && Math.abs(it.vy) < 6) {
+                        it.x = 0; it.y = 0; it.vx = 0; it.vy = 0;
+                        it.recovering = false;
+                        it.phys = false;
+                        it.vx = prankRand(-12, 12);
+                        it.vy = prankRand(-12, 12);
+                    }
+                } else {
+                    if (it.g) it.vy += it.g * dt;       // 重力
+                    it.vx *= (1 - 0.08 * dt);            // 轻微空气阻力
+                    it.x += it.vx * dt;
+                    it.y += it.vy * dt;
+                }
+
                 bounds = prankBounds(it);
-                it.x += it.vx * dt;
-                it.y += it.vy * dt;
-                if (it.x < bounds.minX) { it.x = bounds.minX; it.vx = Math.abs(it.vx); }
-                if (it.x > bounds.maxX) { it.x = bounds.maxX; it.vx = -Math.abs(it.vx); }
-                if (it.y < bounds.minY) { it.y = bounds.minY; it.vy = Math.abs(it.vy); }
-                if (it.y > bounds.maxY) { it.y = bounds.maxY; it.vy = -Math.abs(it.vy); }
+                if (it.x < bounds.minX) { it.x = bounds.minX; it.vx = Math.abs(it.vx) * it.e; }
+                if (it.x > bounds.maxX) { it.x = bounds.maxX; it.vx = -Math.abs(it.vx) * it.e; }
+                if (it.y < bounds.minY) { it.y = bounds.minY; it.vy = Math.abs(it.vy) * it.e; }
+                if (it.y > bounds.maxY) {
+                    it.y = bounds.maxY;
+                    it.vy = -Math.abs(it.vy) * it.e;
+                    it.vx *= 0.82;                       // 地面摩擦
+                }
             }
 
-            // 2. 两两碰撞分离，保证任意时刻都不重叠
+            // 2. 两两碰撞：分离 + 动量交换，保证不重叠
             for (i = 0; i < prankItems.length; i++) {
                 for (j = i + 1; j < prankItems.length; j++) {
                     a = prankItems[i];
@@ -1026,34 +1158,34 @@
                         var pushY = oy + gap;
                         if (pushX > 0 && pushY > 0) {
                             if (pushX < pushY) {
-                                var ca = a.x + a.base.left + a.base.w / 2;
-                                var cb = b.x + b.base.left + b.base.w / 2;
-                                var dir = ca < cb ? -1 : 1;
-                                a.x += dir * pushX / 2;
-                                b.x -= dir * pushX / 2;
-                                a.vx *= -1; b.vx *= -1;
+                                prankCollide(a, b, 'x');
+                                var cax = a.x + a.base.left + a.base.w / 2;
+                                var cbx = b.x + b.base.left + b.base.w / 2;
+                                var nx = cax < cbx ? 1 : -1;
+                                a.x -= nx * pushX / 2;
+                                b.x += nx * pushX / 2;
                             } else {
-                                var da = a.y + a.base.top;
-                                var db = b.y + b.base.top;
-                                var dirY = da < db ? -1 : 1;
-                                a.y += dirY * pushY / 2;
-                                b.y -= dirY * pushY / 2;
-                                a.vy *= -1; b.vy *= -1;
+                                prankCollide(a, b, 'y');
+                                var cay = a.y + a.base.top + a.base.h / 2;
+                                var cby = b.y + b.base.top + b.base.h / 2;
+                                var ny = cay < cby ? 1 : -1;
+                                a.y -= ny * pushY / 2;
+                                b.y += ny * pushY / 2;
                             }
                         }
                     }
                 }
             }
 
-            // 3. 分离后再夹一次边界，然后写 transform
+            // 3. 再夹一次边界，然后只写 transform
             for (i = 0; i < prankItems.length; i++) {
                 it = prankItems[i];
                 bounds = prankBounds(it);
-                if (it.x < bounds.minX) { it.x = bounds.minX; it.vx = Math.abs(it.vx); }
-                if (it.x > bounds.maxX) { it.x = bounds.maxX; it.vx = -Math.abs(it.vx); }
-                if (it.y < bounds.minY) { it.y = bounds.minY; it.vy = Math.abs(it.vy); }
-                if (it.y > bounds.maxY) { it.y = bounds.maxY; it.vy = -Math.abs(it.vy); }
-                it.el.style.transform = 'translate3d(' + it.x + 'px,' + it.y + 'px,0)';
+                if (it.x < bounds.minX) { it.x = bounds.minX; it.vx = Math.abs(it.vx) * it.e; }
+                if (it.x > bounds.maxX) { it.x = bounds.maxX; it.vx = -Math.abs(it.vx) * it.e; }
+                if (it.y < bounds.minY) { it.y = bounds.minY; it.vy = Math.abs(it.vy) * it.e; }
+                if (it.y > bounds.maxY) { it.y = bounds.maxY; it.vy = -Math.abs(it.vy) * it.e; }
+                it.el.style.transform = 'translate3d(' + it.x.toFixed(2) + 'px,' + it.y.toFixed(2) + 'px,0)';
             }
 
             prankRAF = requestAnimationFrame(prankStep);
@@ -1064,19 +1196,27 @@
             prankItems.forEach(function (it) { it.el.style.transform = ''; });
             prankItems = [];
             document.body.classList.remove('prank-mode');
+            document.body.classList.remove('physics-on');
             prankBtn.textContent = '🙃 整活';
             prankOn = false;
         }
 
+        function startPrank() {
+            initPrankItems();
+            if (!prankItems.length) { prankBusy = false; return; }
+            document.body.classList.add('prank-mode');
+            prankBtn.textContent = '↩️ 恢复原状';
+            prankOn = true;
+            prankLast = performance.now();
+            prankRAF = requestAnimationFrame(prankStep);
+            prankBusy = false;
+        }
+
         prankBtn.addEventListener('click', function () {
+            if (prankBusy) return;
             if (!prankOn) {
-                initPrankItems();
-                if (!prankItems.length) return;
-                document.body.classList.add('prank-mode');
-                prankBtn.textContent = '↩️ 恢复原状';
-                prankOn = true;
-                prankLast = performance.now();
-                prankRAF = requestAnimationFrame(prankStep);
+                prankBusy = true;
+                deviceCheck.then(startPrank);   // 评估完再决定是否上物理
             } else {
                 stopPrank();
             }
