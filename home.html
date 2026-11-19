@@ -203,47 +203,67 @@
         border-color: var(--accent); transform: rotate(45deg);
     }
 
-    /* ===== 脆弱的卡片：连点 5 次断裂，两半倒在下方卡片上 ===== */
+    /* ===== 脆弱的卡片：连点 5 次断裂（GPU 优化版） ===== */
     #cardWrap { position: relative; }
 
     #breakLayer {
         position: absolute; inset: 0;
         pointer-events: none;
-        perspective: 1100px;
+        perspective: 1000px;
         transform-style: preserve-3d;
         z-index: 20;
+    }
+
+    /* 关键：克隆层不再做背景模糊，否则每帧都要重新采样背景 */
+    .half,
+    .half * {
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
     }
     .half {
         position: absolute; inset: 0;
         pointer-events: none;
-        backface-visibility: visible;
+        background: rgba(255, 255, 255, 0.96);
+        border: 1px solid var(--border);
+        border-radius: 18px;
+        box-shadow: 0 10px 24px rgba(0, 0, 0, 0.18);
+        backface-visibility: hidden;
         transform-style: preserve-3d;
-        will-change: transform, opacity, filter;
+        will-change: transform;
     }
-    .half.fold-left  { animation: foldLeft 1.2s cubic-bezier(.25,.75,.3,1) forwards; }
-    .half.fold-right { animation: foldRight 1.2s cubic-bezier(.25,.75,.3,1) forwards; }
+    html[data-theme="dark"] .half {
+        background: rgba(30, 41, 59, 0.96);
+    }
+    .half.fold-left  { animation: foldLeft 1s cubic-bezier(.25,.75,.3,1) forwards; }
+    .half.fold-right { animation: foldRight 1s cubic-bezier(.25,.75,.3,1) forwards; }
 
+    /* 只动画 transform，translate3d 强制开 GPU 合成层 */
     @keyframes foldLeft {
-        0%   { transform: rotateY(0deg)   translate(0, 0)       rotateZ(0deg);   opacity: 1; filter: drop-shadow(0 4px 10px rgba(0,0,0,.18)); }
-        22%  { transform: rotateY(-16deg) translate(-4px, -4px)  rotateZ(-1deg);  opacity: 1; filter: drop-shadow(0 6px 12px rgba(0,0,0,.2)); }
-        52%  { transform: rotateY(-64deg) translate(-28px, 42px)  rotateZ(-15deg); opacity: 1; filter: drop-shadow(0 10px 18px rgba(0,0,0,.22)); }
-        100% { transform: rotateY(-74deg) translate(-62px, 152px) rotateZ(-34deg); opacity: 1; filter: drop-shadow(0 14px 22px rgba(0,0,0,.26)); }
+        0%   { transform: translate3d(0, 0, 0) rotateY(0deg) rotateZ(0deg); }
+        22%  { transform: translate3d(-4px, -4px, 0) rotateY(-16deg) rotateZ(-1deg); }
+        52%  { transform: translate3d(-28px, 42px, 0) rotateY(-64deg) rotateZ(-15deg); }
+        100% { transform: translate3d(-62px, 152px, 0) rotateY(-74deg) rotateZ(-34deg); }
     }
     @keyframes foldRight {
-        0%   { transform: rotateY(0deg)   translate(0, 0)       rotateZ(0deg);   opacity: 1; filter: drop-shadow(0 4px 10px rgba(0,0,0,.18)); }
-        22%  { transform: rotateY(16deg)  translate(4px, -4px)   rotateZ(1deg);   opacity: 1; filter: drop-shadow(0 6px 12px rgba(0,0,0,.2)); }
-        52%  { transform: rotateY(64deg)  translate(28px, 42px)   rotateZ(15deg);  opacity: 1; filter: drop-shadow(0 10px 18px rgba(0,0,0,.22)); }
-        100% { transform: rotateY(74deg)  translate(62px, 152px)  rotateZ(34deg);  opacity: 1; filter: drop-shadow(0 14px 22px rgba(0,0,0,.26)); }
+        0%   { transform: translate3d(0, 0, 0) rotateY(0deg) rotateZ(0deg); }
+        22%  { transform: translate3d(4px, -4px, 0) rotateY(16deg) rotateZ(1deg); }
+        52%  { transform: translate3d(28px, 42px, 0) rotateY(64deg) rotateZ(15deg); }
+        100% { transform: translate3d(62px, 152px, 0) rotateY(74deg) rotateZ(34deg); }
     }
 
     .crack-flash { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
     .crack-flash polyline {
-        fill: none; stroke: #fff; stroke-width: 3;
+        fill: none;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        stroke-dasharray: 100;
+        stroke-dashoffset: 100;
+        animation: drawCrack 0.45s ease-out forwards;
         vector-effect: non-scaling-stroke;
-        stroke-dasharray: 100; stroke-dashoffset: 100;
-        filter: drop-shadow(0 0 6px #fff);
-        animation: drawCrack 0.5s ease-out forwards;
     }
+    /* 用两条普通线代替 SVG filter 发光 */
+    .crack-flash polyline.glow { stroke: rgba(56, 189, 248, 0.55); stroke-width: 8; }
+    .crack-flash polyline.core { stroke: #fff; stroke-width: 2.5; }
     @keyframes drawCrack {
         0%   { stroke-dashoffset: 100; opacity: 1; }
         45%  { stroke-dashoffset: 0; opacity: 1; }
@@ -251,14 +271,15 @@
     }
 
     .shard {
-        position: absolute; width: 8px; height: 8px;
+        position: absolute; width: 7px; height: 7px;
+        border-radius: 2px;
         background: var(--accent); opacity: 0.9;
-        clip-path: polygon(50% 0, 100% 100%, 0 70%);
-        animation: shardFly 0.85s ease-out forwards;
+        animation: shardFly 0.7s ease-out forwards;
+        will-change: transform, opacity;
     }
     @keyframes shardFly {
-        0%   { transform: translate(0,0) rotate(0deg); opacity: 0.95; }
-        100% { transform: translate(var(--dx), var(--dy)) rotate(var(--rot)); opacity: 0; }
+        0%   { transform: translate3d(0, 0, 0) rotate(0deg); opacity: 0.9; }
+        100% { transform: translate3d(var(--dx), var(--dy), 0) rotate(var(--rot)); opacity: 0; }
     }
 
     .main-card {
@@ -835,44 +856,54 @@
                 h.classList.add('half', cls);
                 h.style.clipPath = 'polygon(' + polyStr(poly) + ')';
                 h.style.transformOrigin = xPct + '% 50%';
+                h.style.transition = 'none';
+                h.style.backdropFilter = 'none';
+                h.style.webkitBackdropFilter = 'none';
+                h.style.willChange = 'transform';
                 breakLayer.appendChild(h);
             }
             makeHalf('fold-left',  [[0, 0]].concat(pts, [[0, 100]]));
             makeHalf('fold-right', [pts[0], [100, 0], [100, 100]].concat(pts.slice().reverse()));
 
-            // 裂口闪光
+            // 裂口闪光：两条线代替 SVG filter，视觉接近但几乎零成本
             var ns = 'http://www.w3.org/2000/svg';
             var svg = document.createElementNS(ns, 'svg');
             svg.setAttribute('class', 'crack-flash');
             svg.setAttribute('viewBox', '0 0 100 100');
             svg.setAttribute('preserveAspectRatio', 'none');
-            var line = document.createElementNS(ns, 'polyline');
-            line.setAttribute('points', pts.map(function (p) { return p[0] + ',' + p[1]; }).join(' '));
-            line.setAttribute('pathLength', '100');
-            svg.appendChild(line);
+            var pointsAttr = pts.map(function (p) { return p[0] + ',' + p[1]; }).join(' ');
+            ['glow', 'core'].forEach(function (kind) {
+                var line = document.createElementNS(ns, 'polyline');
+                line.setAttribute('class', kind);
+                line.setAttribute('points', pointsAttr);
+                line.setAttribute('pathLength', '100');
+                svg.appendChild(line);
+            });
             breakLayer.appendChild(svg);
 
-            // 裂口碎屑
-            for (var k = 0; k < 18; k++) {
+            // 碎屑：18 → 10，去掉 clip-path
+            for (var k = 0; k < 10; k++) {
                 var d = document.createElement('div');
                 d.className = 'shard';
                 d.style.left = xPct + '%';
                 d.style.top = (12 + Math.random() * 76) + '%';
-                d.style.setProperty('--dx', ((Math.random() * 2 - 1) * 180) + 'px');
-                d.style.setProperty('--dy', ((Math.random() * 2 - 1) * 110 + 40) + 'px');
-                d.style.setProperty('--rot', (Math.random() * 720 - 360) + 'deg');
-                d.style.animationDelay = (Math.random() * 0.09) + 's';
+                d.style.setProperty('--dx', ((Math.random() * 2 - 1) * 140) + 'px');
+                d.style.setProperty('--dy', ((Math.random() * 2 - 1) * 80 + 30) + 'px');
+                d.style.setProperty('--rot', (Math.random() * 540 - 270) + 'deg');
+                d.style.animationDelay = (Math.random() * 0.06) + 's';
                 breakLayer.appendChild(d);
             }
 
+            // 原卡立刻隐掉，避免 0.2s 透明度过渡再叠一层合成
+            userCard.style.transition = 'none';
             userCard.classList.add('hidden');
 
-            // 碎完之后弹彩蛋 8
+            // 动画 1s，结束后弹彩蛋
             setTimeout(function () {
                 if (egg8Shown) return;
                 egg8Shown = true;
                 egg8Modal.classList.add('show');
-            }, 1200);
+            }, 1000);
         }
     </script>
 </body>
