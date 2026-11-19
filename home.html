@@ -204,7 +204,10 @@
     }
 
     /* ===== 脆弱的卡片：连点 5 次断裂（GPU 优化版） ===== */
-    #cardWrap { position: relative; }
+    #cardWrap {
+        position: relative;
+        transition: transform 0.75s cubic-bezier(0.22, 1, 0.36, 1);
+    }
 
     #breakLayer {
         position: absolute; inset: 0;
@@ -289,7 +292,7 @@
         border-radius: 22px;
         padding: 24px;
         box-shadow: var(--shadow);
-        transition: background var(--t-color), border-color var(--t-color), box-shadow var(--t-color);
+        transition: background var(--t-color), border-color var(--t-color), box-shadow var(--t-color), transform 0.75s cubic-bezier(0.22, 1, 0.36, 1);
     }
 
     .menu { display: flex; flex-direction: column; gap: 12px; }
@@ -407,12 +410,34 @@
     }
     .egg-hint { font-size: 0.85em; color: var(--text-muted); margin-top: 16px; }
 
+    /* ========== 整活按钮 ========== */
+    #prankBtn {
+        position: fixed; right: 20px; bottom: 20px;
+        display: inline-flex; align-items: center; gap: 6px;
+        padding: 10px 18px; font-size: 0.95em; font-family: inherit;
+        color: var(--text); background: var(--card);
+        border: 1px solid var(--border); border-radius: 999px;
+        box-shadow: var(--shadow); z-index: 999;
+        backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+        cursor: pointer; user-select: none;
+        transition: background 0.2s, color 0.2s, border-color 0.2s, transform 0.15s, opacity 0.2s;
+    }
+    #prankBtn:hover:not(:disabled) {
+        background: var(--btn-bg); color: var(--btn-text);
+        border-color: var(--btn-bg); transform: translateY(-2px);
+    }
+    #prankBtn:active:not(:disabled) { transform: translateY(0); }
+    #prankBtn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+    body.prank-mode #cardWrap,
+    body.prank-mode .main-card { will-change: transform; }
+
     @media (max-width: 600px) {
         body { padding: 16px; }
         .header-card { padding: 12px 16px; }
         .avatar { width: 40px; height: 40px; font-size: 1em; }
         .greeting { font-size: 1.1em; }
         .main-card { padding: 18px; }
+        #prankBtn { right: 14px; bottom: 14px; padding: 8px 14px; font-size: 0.85em; }
     }
 </style>
 </head>
@@ -509,6 +534,9 @@
             <button class="btn danger" style="width:100%;" id="closeEgg8Btn">收下彩蛋</button>
         </div>
     </div>
+
+    <!-- 整活按钮 -->
+    <button id="prankBtn" title="整活一下">🙃 整活</button>
 
     <script>
         function safeGet(k){ try { return localStorage.getItem(k); } catch(e){ return null; } }
@@ -905,6 +933,86 @@
                 egg8Modal.classList.add('show');
             }, 1000);
         }
+
+        // ========== 整活：卡片乱跑（不重叠、可点击） ==========
+        var prankBtn = document.getElementById('prankBtn');
+        var cardWrap = document.getElementById('cardWrap');
+        var mainCard = document.querySelector('.main-card');
+        var prankOn = false;
+        var prankBusy = false;
+        var baseRects = null;
+
+        function prankRand(min, max) { return min + Math.random() * (max - min); }
+        function prankShift(rect, dx, dy) {
+            return {
+                left: rect.left + dx, right: rect.right + dx,
+                top: rect.top + dy, bottom: rect.bottom + dy
+            };
+        }
+        function prankOverlap(a, b) {
+            var gap = 12;
+            return !(a.right + gap <= b.left || b.right + gap <= a.left ||
+                     a.bottom + gap <= b.top || b.bottom + gap <= a.top);
+        }
+        function prankDxRange(rect) {
+            var min = 8 - rect.left;
+            var max = window.innerWidth - 8 - rect.right;
+            if (min > max) { min = 0; max = 0; }
+            return { min: min, max: max };
+        }
+        function lockPrankBtn() {
+            prankBtn.disabled = true;
+            setTimeout(function () { prankBtn.disabled = false; }, 800);
+        }
+
+        prankBtn.addEventListener('click', function () {
+            if (prankBusy) return;
+            prankBusy = true;
+            lockPrankBtn();
+
+            if (!prankOn) {
+                // 记录原始位置（此时还没有 transform）
+                baseRects = {
+                    top: cardWrap.getBoundingClientRect(),
+                    bottom: mainCard.getBoundingClientRect()
+                };
+
+                var topRange = prankDxRange(baseRects.top);
+                var botRange = prankDxRange(baseRects.bottom);
+                var topDx, topDy, botDx, botDy, topRect, botRect, tries = 0;
+
+                do {
+                    topDx = prankRand(topRange.min, topRange.max);
+                    topDy = prankRand(-24, 24);                 // 平移
+                    botDx = prankRand(botRange.min, botRange.max);
+                    botDy = prankRand(46, 110);                  // 掉落
+                    topRect = prankShift(baseRects.top, topDx, topDy);
+                    botRect = prankShift(baseRects.bottom, botDx, botDy);
+                    tries++;
+                } while (prankOverlap(topRect, botRect) && tries < 60);
+
+                // 兜底：实在随机不出来就把下面卡片再往下压
+                if (prankOverlap(topRect, botRect)) {
+                    botDy = baseRects.bottom.height + 34;
+                    botRect = prankShift(baseRects.bottom, botDx, botDy);
+                }
+
+                cardWrap.style.transform = 'translate3d(' + topDx + 'px,' + topDy + 'px,0) rotate(' + prankRand(-1.5, 1.5) + 'deg)';
+                mainCard.style.transform = 'translate3d(' + botDx + 'px,' + botDy + 'px,0) rotate(' + prankRand(-1, 1) + 'deg)';
+                document.body.classList.add('prank-mode');
+                prankBtn.textContent = '↩️ 恢复原状';
+                prankOn = true;
+            } else {
+                cardWrap.style.transform = '';
+                mainCard.style.transform = '';
+                document.body.classList.remove('prank-mode');
+                prankBtn.textContent = '🙃 整活';
+                prankOn = false;
+                baseRects = null;
+            }
+
+            setTimeout(function () { prankBusy = false; }, 800);
+        });
     </script>
 </body>
 </html>
