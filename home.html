@@ -429,16 +429,10 @@
         will-change: transform;
     }
     body.prank-mode #cardWrap { will-change: transform; }
-
-    /* 恢复原状状态下，按钮自己也转 */
+    /* 恢复原状按钮也参与物理：去掉 transform 过渡，避免每帧被缓动拖慢 */
     body.prank-mode #prankBtn {
-        animation: btnSpin 4.5s linear infinite;
-    }
-    body.prank-mode #prankBtn:hover { transform: none; }
-    @keyframes btnSpin {
-        0%   { transform: rotate(0deg)    translateY(0)    scale(1); }
-        50%  { transform: rotate(-180deg) translateY(-2px) scale(1.03); }
-        100% { transform: rotate(-360deg) translateY(0)    scale(1); }
+        transition: background 0.2s, color 0.2s, border-color 0.2s;
+        will-change: transform;
     }
 
     /* 齿轮（设置按钮）持续转动；--gx/--gy 由 JS 更新，实现飞出原卡片 */
@@ -455,18 +449,51 @@
     /* 物理模式开启时的轻微描边提示（不用 filter，避免逐帧重绘） */
     body.physics-on .menu-item { border-color: var(--accent); }
 
-    /* ========== 从别的界面飞进来的访客卡片 ========== */
+    /* ========== 别的界面的元素飞进来（10 秒内必走、不可点击） ========== */
     .visitor-card {
         position: fixed !important;
         left: 0 !important;
         top: 0 !important;
         margin: 0 !important;
+        padding: 12px 16px;
+        min-width: 180px;
+        max-width: 250px;
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        box-shadow: var(--shadow);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        color: var(--text);
+        font-family: "华文中宋", "STZhongsong", "SimSun", serif;
+        font-size: 0.9em;
+        line-height: 1.6;
         z-index: 900;
         pointer-events: none !important;
-        cursor: default !important;
         opacity: 0;
         will-change: transform, opacity;
         transform-origin: 50% 50%;
+    }
+    .visitor-card .v-from {
+        position: absolute; right: 10px; top: 6px;
+        font-size: 0.7em; color: var(--text-muted); opacity: 0.7;
+    }
+    .visitor-card .v-title { font-size: 1.05em; color: var(--accent); margin: 2px 0 4px; }
+    .visitor-card .v-desc { font-size: 0.85em; color: var(--text-muted); }
+    .visitor-card .v-captcha { display: flex; align-items: center; gap: 10px; margin-top: 2px; }
+    .visitor-card .v-box {
+        width: 20px; height: 20px; flex: 0 0 20px;
+        border: 2px solid var(--accent); border-radius: 4px;
+        display: inline-flex; align-items: center; justify-content: center;
+        color: var(--accent); font-size: 0.8em;
+    }
+    .visitor-card .v-download {
+        display: flex; align-items: center; gap: 10px;
+        color: var(--btn-bg); font-weight: bold;
+    }
+    .visitor-card .v-btn {
+        display: inline-block; margin-top: 6px; padding: 4px 10px;
+        border-radius: 8px; background: var(--btn-bg); color: var(--btn-text); font-size: 0.85em;
     }
 
     @media (max-width: 600px) {
@@ -977,7 +1004,7 @@
             }, 1000);
         }
 
-        // ========== 神秘的按钮：评估 / 物理 / 补动能 / 倾倒回正 / 齿轮飞出 / 访客卡片 ==========
+        // ========== 神秘的按钮：评估 / 物理 / 补动能 / 倾倒回正 / 齿轮飞出 / 外来元素 ==========
         var prankBtn = document.getElementById('prankBtn');
         var menuEl = document.getElementById('menuContainer');
         var prankOn = false;
@@ -1044,7 +1071,10 @@
             var gear = document.getElementById('settingsBtn');
             gear.style.removeProperty('--gx');
             gear.style.removeProperty('--gy');
-            var nodes = [wrap, gear].concat(Array.prototype.slice.call(menuEl.querySelectorAll('.menu-item')));
+            // 恢复原状按钮本身也作为普通物理体，和其他卡片一样
+            var nodes = [wrap, gear, prankBtn].concat(
+                Array.prototype.slice.call(menuEl.querySelectorAll('.menu-item'))
+            );
             prankItems = [];
             var now = performance.now();
 
@@ -1054,6 +1084,7 @@
                 var r = el.getBoundingClientRect();
                 var isGear = (el === gear);
                 var isBig = (el === wrap);
+                var isBtn = (el === prankBtn);
 
                 var base = {
                     left: r.left, right: r.right,
@@ -1091,10 +1122,11 @@
 
                 prankItems.push({
                     el: el,
+                    isBtn: isBtn,
                     base: base,
                     x: 0, y: 0,
                     rot: rot, av: av,
-                    mass: isBig ? 2.4 : 1,
+                    mass: isBtn ? 1.6 : (isBig ? 2.4 : 1),
                     e: physical ? prankRand(0.45, 0.78) : 1,
                     g: (physical && mode === 'gravity') ? prankRand(220, 460) : 0,
                     phys: physical,
@@ -1198,38 +1230,31 @@
             return 10 + Math.min(26, (Math.abs(a.rot) + Math.abs(b.rot)) / 10);
         }
 
-        // ========== 别的界面飞进来的访客卡片（10 秒内必走、不可点击） ==========
-        var VISITOR_LABELS = [
-            '📢 通知板', '🖼️ 2901 图库', '📚 生物错题统计',
-            '📊 生物错题统计结果', '🎨 自由发挥区一览', '🥚 彩蛋收集站',
-            '📝 发布生物错题统计', '🛡️ 审核用户', '👥 用户管理'
+        // ========== 别的界面的元素飞进来（10 秒内必走、不可点击） ==========
+        var VISITOR_TEMPLATES = [
+            '<div class="v-from">↗ 来自通知板</div><div class="v-title">📢 通知板</div><div class="v-desc">欢迎使用2901 Space！新功能上新~</div>',
+            '<div class="v-from">↗ 来自人机验证</div><div class="v-title">🔐 人机验证</div><div class="v-captcha"><span class="v-box">✓</span><span>我不是机器人</span></div>',
+            '<div class="v-from">↗ 来自下载页</div><div class="v-title">⬇️ 下载 2901 Island</div><div class="v-desc">点击下方按钮获取安装包</div><span class="v-btn">立即下载</span>',
+            '<div class="v-from">↗ 来自图库</div><div class="v-title">🖼️ 2901 图库</div><div class="v-desc">显示网络错误？在这里测试服务器</div>',
+            '<div class="v-from">↗ 来自彩蛋站</div><div class="v-title">🥚 彩蛋收集站</div><div class="v-desc">集齐 9 个彩蛋触发神秘事件</div>',
+            '<div class="v-from">↗ 来自神秘礼品</div><div class="v-title">🎁 神秘礼品</div><div class="v-desc">片尾字幕结束后揭晓…</div>',
+            '<div class="v-from">↗ 来自服务器测试</div><div class="v-title">🔧 服务器测试</div><div class="v-desc">/2901space/test.html</div>'
         ];
 
         function spawnVisitor(now) {
             if (visitors.length >= 3) return;
-            var src = menuEl.querySelector('.menu-item');
-            if (!src) return;
-            var el = src.cloneNode(true);
-            el.removeAttribute('href');
-            el.removeAttribute('id');
-            el.classList.add('visitor-card');
+            var tpl = VISITOR_TEMPLATES[Math.floor(Math.random() * VISITOR_TEMPLATES.length)];
+            var el = document.createElement('div');
+            el.className = 'visitor-card';
             el.style.pointerEvents = 'none';          // 不能点击
+            el.innerHTML = tpl;
             document.body.appendChild(el);
 
-            var w = el.offsetWidth || 160;
-            var h = el.offsetHeight || 54;
+            var w = el.offsetWidth || 180;
+            var h = el.offsetHeight || 90;
             var fromLeft = Math.random() < 0.5;
             var x = fromLeft ? -w - 40 : window.innerWidth + 40;
             var y = prankRand(60, Math.max(80, window.innerHeight - h - 60));
-
-            var label = VISITOR_LABELS[Math.floor(Math.random() * VISITOR_LABELS.length)];
-            var parts = label.split(' ');
-            var iconEl = el.querySelector('.icon');
-            var textEl = el.querySelector('.text');
-            var arrowEl = el.querySelector('.arrow');
-            if (iconEl) iconEl.textContent = parts[0];
-            if (textEl) textEl.textContent = parts.slice(1).join(' ');
-            if (arrowEl) arrowEl.textContent = '↗';
 
             visitors.push({
                 el: el, w: w, h: h,
