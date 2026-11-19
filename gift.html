@@ -72,11 +72,24 @@
 
     .credit-spacer { height: 42vh; flex-shrink: 0; }
 
+    /* 纯 CSS 定时淡入，不依赖任何 JS / 鼠标事件 */
     .reveal {
-        opacity: 0; transform: translateY(26px);
-        transition: opacity 0.9s ease, transform 0.9s ease;
+        opacity: 0;
+        animation: fadeInUp 1s ease forwards;
     }
-    .reveal.visible { opacity: 1; transform: none; }
+    @keyframes fadeInUp {
+        from { opacity: 0; transform: translateY(26px); }
+        to   { opacity: 1; transform: translateY(0); }
+    }
+    .d1 { animation-delay: 5.5s; }
+    .d2 { animation-delay: 8s; }
+    .d3 { animation-delay: 10.5s; }
+    .d4 { animation-delay: 13s; }
+    .d5 { animation-delay: 15s; }
+    .d6 { animation-delay: 17s; }
+    .d7 { animation-delay: 20s; }
+    .d8 { animation-delay: 21.5s; }
+    .d9 { animation-delay: 28s; }
 
     .credit-title {
         font-size: 2.2em; font-weight: normal;
@@ -135,6 +148,16 @@
         .credit-tech { gap: 16px; font-size: 1em; }
         .credit-thanks { font-size: 1em; }
         .gift-photo { max-width: 86vw; }
+
+        .d1 { animation-delay: 4.7s; }
+        .d2 { animation-delay: 6.8s; }
+        .d3 { animation-delay: 8.9s; }
+        .d4 { animation-delay: 11s; }
+        .d5 { animation-delay: 12.7s; }
+        .d6 { animation-delay: 14.4s; }
+        .d7 { animation-delay: 16.9s; }
+        .d8 { animation-delay: 18.2s; }
+        .d9 { animation-delay: 23.6s; }
     }
 </style>
 </head>
@@ -146,19 +169,19 @@
         <div class="credits" id="credits">
             <div class="credit-spacer"></div>
 
-            <h1 class="credit-title reveal">鸣谢</h1>
+            <h1 class="credit-title reveal d1">鸣谢</h1>
 
-            <div class="credit-block reveal">
+            <div class="credit-block reveal d2">
                 <div class="credit-role">设计 / 开发</div>
                 <div class="credit-name">刘智中</div>
             </div>
 
-            <div class="credit-block reveal">
+            <div class="credit-block reveal d3">
                 <div class="credit-role">开发协助</div>
                 <div class="credit-name">Deepseek</div>
             </div>
 
-            <div class="credit-block reveal">
+            <div class="credit-block reveal d4">
                 <div class="credit-role">技术支持（无先后顺序）</div>
                 <div class="credit-tech">
                     <span>Opencode</span>
@@ -167,36 +190,24 @@
                 </div>
             </div>
 
-            <div class="credit-divider reveal">· · ·</div>
+            <div class="credit-divider reveal d5">· · ·</div>
 
-            <div class="credit-thanks reveal">
+            <div class="credit-thanks reveal d6">
                 感谢您对 2901 Space 的探索<br>
                 感谢一路相伴<br>
             </div>
 
-            <div class="credit-gift-label reveal">这是您应得的礼物</div>
+            <div class="credit-gift-label reveal d7">这是您应得的礼物</div>
 
-            <div class="gift-photo reveal">
+            <div class="gift-photo reveal d8">
                 <img src="/2901space/end.png" alt="这是您应得的礼物">
             </div>
 
-            <div class="credit-the-end reveal">— 完 —</div>
+            <div class="credit-the-end reveal d9">— 完 —</div>
 
             <div class="credit-spacer" style="height: 18vh;"></div>
         </div>
     </div>
 
-    <script>
-        // 字幕条目进入视口时淡入，模拟电影片尾逐条浮现
-        var io = new IntersectionObserver(function (entries) {
-            entries.forEach(function (e) {
-                if (e.isIntersecting) e.target.classList.add('visible');
-            });
-        }, { threshold: 0.15 });
-
-        document.querySelectorAll('.reveal').forEach(function (el) {
-            io.observe(el);
-        });
-    </script>
 </body>
 </html>
