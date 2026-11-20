@@ -130,6 +130,58 @@
     .denied-desc { color: var(--text-muted); margin-bottom: 24px; }
     .btn-link { display: inline-block; padding: 10px 24px; color: var(--btn-text); background: var(--btn-bg); border-radius: 10px; text-decoration: none; }
 
+    /* ========== 加载中 + 大致进度条 ========== */
+    .loading-overlay {
+        position: fixed; inset: 0; z-index: 2000;
+        background: linear-gradient(160deg, var(--bg1), var(--bg2));
+        display: flex; align-items: center; justify-content: center;
+        opacity: 0; visibility: hidden;
+        transition: opacity 0.3s ease, visibility 0.3s ease;
+        padding: 24px;
+    }
+    .loading-overlay.show { opacity: 1; visibility: visible; }
+    .loading-box {
+        width: min(360px, calc(100vw - 40px));
+        background: var(--card);
+        backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+        border: 1px solid var(--border); border-radius: 18px;
+        padding: 28px 26px; box-shadow: var(--shadow);
+        text-align: center;
+    }
+    .loading-spinner {
+        width: 44px; height: 44px; margin: 0 auto 16px;
+        border: 4px solid var(--border);
+        border-top-color: var(--accent);
+        border-radius: 50%;
+        animation: loadingSpin 0.9s linear infinite;
+    }
+    @keyframes loadingSpin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+    }
+    .loading-title {
+        font-size: 1.25em; font-weight: normal; color: var(--text);
+        margin-bottom: 4px;
+    }
+    .loading-text {
+        font-size: 0.9em; color: var(--text-muted);
+        min-height: 1.6em;
+    }
+    .progress-track {
+        margin-top: 18px; height: 10px;
+        background: var(--track); border-radius: 999px;
+        overflow: hidden;
+    }
+    .progress-bar {
+        height: 100%; width: 0;
+        background: linear-gradient(90deg, var(--accent), #6366F1);
+        border-radius: 999px;
+        transition: width 0.35s ease;
+    }
+    .progress-percent {
+        margin-top: 8px; font-size: 0.85em; color: var(--text-muted);
+    }
+
     /* ========== 导出 PDF ========== */
     .export-card { text-align: center; }
     .export-pdf-btn {
@@ -164,7 +216,8 @@
     body.pdf-exporting .export-pdf-btn,
     body.pdf-exporting .export-note,
     body.pdf-exporting .back-home,
-    body.pdf-exporting #themeToggle { display: none !important; }
+    body.pdf-exporting #themeToggle,
+    body.pdf-exporting .loading-overlay { display: none !important; }
 
     @media (max-width: 600px) {
         body { padding: 76px 14px 32px; }
@@ -179,6 +232,19 @@
 </style>
 </head>
 <body>
+
+    <!-- 加载中遮罩 -->
+    <div class="loading-overlay show" id="loadingOverlay">
+        <div class="loading-box">
+            <div class="loading-spinner"></div>
+            <div class="loading-title">正在加载结果</div>
+            <div class="loading-text" id="loadingText">正在准备…</div>
+            <div class="progress-track">
+                <div class="progress-bar" id="loadingBar"></div>
+            </div>
+            <div class="progress-percent" id="loadingPercent">0%</div>
+        </div>
+    </div>
 
     <a class="back-home" href="https://pillager-outpost.github.io/2901space/home.html" title="返回用户主页"><span>←</span> 返回</a>
     <button id="themeToggle" title="切换深色/浅色模式">🌙</button>
@@ -277,6 +343,59 @@
             applyTheme(next); safeSet('theme', next);
         });
 
+        /* ========== 加载中 + 大致进度 ========== */
+        var loadingOverlay = document.getElementById('loadingOverlay');
+        var loadingBar = document.getElementById('loadingBar');
+        var loadingText = document.getElementById('loadingText');
+        var loadingPercent = document.getElementById('loadingPercent');
+        var loadProgress = 0;
+        var loadingTimer = null;
+
+        function setLoading(p, text) {
+            loadProgress = Math.max(loadProgress, Math.min(100, p));
+            loadingBar.style.width = loadProgress.toFixed(0) + '%';
+            loadingPercent.textContent = loadProgress.toFixed(0) + '%';
+            if (text) loadingText.textContent = text;
+        }
+
+        function startLoading(text) {
+            loadProgress = 0;
+            loadingOverlay.classList.add('show');
+            loadingBar.style.background = '';
+            setLoading(6, text || '正在准备…');
+
+            if (!loadingTimer) {
+                loadingTimer = setInterval(function () {
+                    if (loadProgress < 88) {
+                        setLoading(loadProgress + 1 + Math.random() * 2.5);
+                    }
+                }, 240);
+            }
+        }
+
+        function finishLoading() {
+            setLoading(100, '加载完成');
+            if (loadingTimer) {
+                clearInterval(loadingTimer);
+                loadingTimer = null;
+            }
+            setTimeout(function () {
+                loadingOverlay.classList.remove('show');
+            }, 320);
+        }
+
+        function failLoading(text) {
+            if (loadingTimer) {
+                clearInterval(loadingTimer);
+                loadingTimer = null;
+            }
+            setLoading(100, text || '加载失败');
+            loadingBar.style.background = '#ef4444';
+            setTimeout(function () {
+                loadingOverlay.classList.remove('show');
+            }, 850);
+        }
+
         function el(tag, cls, text) {
             var n = document.createElement(tag);
             if (cls) n.className = cls;
@@ -329,7 +448,13 @@
             container.appendChild(card);
         }
         async function checkAccess() {
-            if (!token || !currentUsername) { location.href = LOGIN_URL; return false; }
+            if (!token || !currentUsername) {
+                setLoading(10, '正在跳转登录…');
+                location.href = LOGIN_URL;
+                return false;
+            }
+
+            setLoading(14, '正在校验身份…');
             try {
                 var res = await fetch(GET_USER_URL, {
                     method: 'POST',
@@ -337,9 +462,14 @@
                     body: JSON.stringify({ username: currentUsername })
                 });
                 var data = await res.json();
+                setLoading(30, '身份校验完成');
+
                 if (res.ok && data.ok && ['teacher', 'admin'].indexOf(data.level) !== -1) return true;
                 showDenied('当前页面仅教师 / 管理员可用，你的身份为 ' + (data.level || '未知') + '。');
-            } catch (e) { showDenied('身份校验失败，请刷新重试。'); }
+            } catch (e) {
+                setLoading(30, '身份校验失败');
+                showDenied('身份校验失败，请刷新重试。');
+            }
             return false;
         }
 
@@ -432,7 +562,10 @@
             });
         }
 
-        async function loadResults() {
+        async function loadResults(isRefresh) {
+            if (isRefresh) startLoading('正在刷新…');
+            setLoading(46, isRefresh ? '正在刷新统计结果…' : '正在读取统计结果…');
+
             var refreshBtn = document.getElementById('refreshBtn');
             refreshBtn.disabled = true;
             try {
@@ -441,18 +574,29 @@
                     headers: { 'Content-Type': 'application/json', 'apikey': ANON_KEY, 'Authorization': 'Bearer ' + ANON_KEY },
                     body: JSON.stringify({ action: 'results', currentUser: currentUsername })
                 });
+                setLoading(76, '正在接收数据…');
+
                 var data = await res.json().catch(function () { return {}; });
                 if (!res.ok || !data.ok) throw new Error(data.msg || ('加载失败：' + res.status));
+
+                setLoading(88, '正在整理数据…');
                 renderResults(data);
+                return true;
             } catch (err) {
                 resultList.innerHTML = '';
                 resultList.appendChild(el('div', 'empty-hint', '❌ 加载失败：' + err.message));
+                failLoading('加载失败');
+                return false;
             } finally {
                 refreshBtn.disabled = false;
             }
         }
 
-        document.getElementById('refreshBtn').addEventListener('click', loadResults);
+        document.getElementById('refreshBtn').addEventListener('click', function () {
+            loadResults(true).then(function (ok) {
+                if (ok) finishLoading();
+            });
+        });
 
         /* ========== 导出 PDF（强制浅色） ========== */
         var exportBtn = document.getElementById('exportPdfBtn');
@@ -546,8 +690,13 @@
 
         /* ========== 初始化 ========== */
         (async function init() {
-            if (!(await checkAccess())) return;
-            await loadResults();
+            startLoading('正在打开结果页…');
+            if (!(await checkAccess())) {
+                failLoading('身份校验失败');
+                return;
+            }
+            var ok = await loadResults(false);
+            if (ok) finishLoading();
         })();
     </script>
 </body>
