@@ -25,6 +25,14 @@
         --tab-active: #1E293B;
         --tab-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
         --t-color: 0.3s ease-out;
+
+        /* 外来页面卡片还原用 */
+        --input-bg: rgba(255, 255, 255, 0.5);
+        --highlight-bg: #BAE6FD;
+        --highlight-text: #0369A1;
+        --ok: #0a7d32;
+        --warn: #b45309;
+        --err: #c62828;
         
         --bubble-bg: rgba(14, 165, 233, 0.2);
         --bubble-border: rgba(14, 165, 233, 0.5);
@@ -49,6 +57,15 @@
         --tab-text: #94A3B8;
         --tab-active: #F8FAFC;
         --tab-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
+        --t-color: 0.3s ease-out;
+
+        /* 外来页面卡片还原用 */
+        --input-bg: rgba(255, 255, 255, 0.06);
+        --highlight-bg: #0C4A6E;
+        --highlight-text: #7DD3FC;
+        --ok: #4ade80;
+        --warn: #fbbf24;
+        --err: #f87171;
         
         --bubble-bg: rgba(56, 189, 248, 0.15);
         --bubble-border: rgba(56, 189, 248, 0.4);
@@ -449,51 +466,198 @@
     /* 物理模式开启时的轻微描边提示（不用 filter，避免逐帧重绘） */
     body.physics-on .menu-item { border-color: var(--accent); }
 
-    /* ========== 别的界面的元素飞进来（10 秒内必走、不可点击） ========== */
+    /* ========== 别的界面的元素飞进来（按站内真实页面结构静态还原；10 秒内必走、不可点击） ========== */
     .visitor-card {
         position: fixed !important;
         left: 0 !important;
         top: 0 !important;
         margin: 0 !important;
-        padding: 12px 16px;
-        min-width: 180px;
-        max-width: 250px;
-        background: var(--card);
+        width: 268px;
+        max-width: calc(100vw - 20px);
+        padding: 8px;
+        background: linear-gradient(160deg, var(--bg1), var(--bg2));
         border: 1px solid var(--border);
-        border-radius: 14px;
+        border-radius: 16px;
         box-shadow: var(--shadow);
-        backdrop-filter: blur(12px);
-        -webkit-backdrop-filter: blur(12px);
         color: var(--text);
         font-family: "华文中宋", "STZhongsong", "SimSun", serif;
-        font-size: 0.9em;
+        font-size: 11px;
         line-height: 1.6;
         z-index: 900;
         pointer-events: none !important;
+        user-select: none;
+        -webkit-user-select: none;
         opacity: 0;
+        overflow: hidden;
         will-change: transform, opacity;
         transform-origin: 50% 50%;
     }
-    .visitor-card .v-from {
-        position: absolute; right: 10px; top: 6px;
-        font-size: 0.7em; color: var(--text-muted); opacity: 0.7;
+    .visitor-card * { pointer-events: none !important; }
+
+    .visitor-card .v-bar {
+        display: flex; align-items: center; justify-content: space-between;
+        margin-bottom: 6px;
     }
-    .visitor-card .v-title { font-size: 1.05em; color: var(--accent); margin: 2px 0 4px; }
-    .visitor-card .v-desc { font-size: 0.85em; color: var(--text-muted); }
-    .visitor-card .v-captcha { display: flex; align-items: center; gap: 10px; margin-top: 2px; }
-    .visitor-card .v-box {
-        width: 20px; height: 20px; flex: 0 0 20px;
-        border: 2px solid var(--accent); border-radius: 4px;
-        display: inline-flex; align-items: center; justify-content: center;
-        color: var(--accent); font-size: 0.8em;
+    .visitor-card .v-back {
+        display: inline-flex; align-items: center; gap: 3px;
+        padding: 3px 8px; font-size: 9px;
+        color: var(--text); background: var(--card);
+        border: 1px solid var(--border); border-radius: 6px;
+        box-shadow: var(--shadow);
     }
-    .visitor-card .v-download {
-        display: flex; align-items: center; gap: 10px;
-        color: var(--btn-bg); font-weight: bold;
+    .visitor-card .v-theme {
+        width: 20px; height: 20px; border-radius: 50%;
+        border: 1px solid var(--border); background: var(--card);
+        color: var(--text); font-size: 10px;
+        display: flex; align-items: center; justify-content: center;
+        box-shadow: var(--shadow);
     }
-    .visitor-card .v-btn {
-        display: inline-block; margin-top: 6px; padding: 4px 10px;
-        border-radius: 8px; background: var(--btn-bg); color: var(--btn-text); font-size: 0.85em;
+
+    .visitor-card .v-card {
+        background: var(--card);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        border: 1px solid var(--border); border-radius: 10px;
+        padding: 10px 12px; box-shadow: var(--shadow);
+    }
+    .visitor-card .v-card + .v-card { margin-top: 6px; }
+
+    .visitor-card .v-head { text-align: center; }
+    .visitor-card .v-title { font-size: 14px; font-weight: normal; line-height: 1.4; }
+    .visitor-card .v-hl {
+        background: var(--highlight-bg); color: var(--highlight-text);
+        padding: 0 5px; border-radius: 3px;
+    }
+    .visitor-card .v-sub { font-size: 9px; color: var(--text-muted); }
+
+    .visitor-card .v-sec {
+        font-size: 10.5px; color: var(--accent); letter-spacing: .12em;
+        display: flex; align-items: center; justify-content: space-between;
+        margin-bottom: 6px;
+    }
+    .visitor-card .v-mini-btn,
+    .visitor-card .v-submit {
+        font-size: 8.5px; letter-spacing: 0; padding: 2px 7px;
+        border: 1px solid var(--border); border-radius: 6px;
+        color: var(--text-muted); background: transparent; white-space: nowrap;
+    }
+    .visitor-card .v-submit {
+        color: var(--btn-text); background: var(--btn-bg);
+        border-color: var(--btn-bg); opacity: .85;
+    }
+
+    .visitor-card .v-notice-list { display: flex; flex-direction: column; gap: 6px; }
+    .visitor-card .v-notice,
+    .visitor-card .v-result {
+        border: 1px solid var(--border); border-radius: 7px;
+        padding: 7px 9px; background: var(--input-bg);
+    }
+    .visitor-card .v-notice-head {
+        display: flex; align-items: baseline; justify-content: space-between;
+        gap: 6px; margin-bottom: 3px;
+    }
+    .visitor-card .v-author {
+        font-size: 10px; color: var(--accent); font-weight: bold;
+        display: inline-flex; align-items: center; gap: 4px;
+    }
+    .visitor-card .v-dot {
+        width: 5px; height: 5px; border-radius: 50%; background: var(--accent);
+    }
+    .visitor-card .v-time { font-size: 8px; color: var(--text-muted); }
+    .visitor-card .v-text {
+        font-size: 10px; color: var(--text); line-height: 1.6; overflow-wrap: anywhere;
+    }
+    .visitor-card .v-label { font-size: 9px; color: var(--text-muted); }
+    .visitor-card .v-code {
+        font-family: "Consolas", "Courier New", monospace;
+        background: var(--bg-hover); padding: 1px 4px; border-radius: 4px; font-size: 9px;
+    }
+
+    .visitor-card .v-form { display: flex; flex-direction: column; gap: 8px; }
+    .visitor-card .v-textarea {
+        min-height: 30px; padding: 6px 8px; font-size: 9px;
+        color: var(--text-muted); background: var(--input-bg);
+        border: 1px solid var(--border); border-radius: 6px;
+    }
+    .visitor-card .v-slider {
+        position: relative; height: 26px; overflow: hidden;
+        background: var(--input-bg); border: 1px solid var(--border); border-radius: 7px;
+    }
+    .visitor-card .v-slider-fill {
+        position: absolute; top: 0; left: 0; bottom: 0; width: 38%;
+        background: linear-gradient(90deg, rgba(14,165,233,.22), rgba(99,102,241,.22));
+    }
+    .visitor-card .v-slider-label {
+        position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+        padding: 0 24px; font-size: 9px; color: var(--text-muted); text-align: center;
+    }
+    .visitor-card .v-slider-thumb {
+        position: absolute; top: 2px; left: 2px; width: 22px; height: 22px;
+        border-radius: 6px; background: var(--btn-bg); color: var(--btn-text);
+        display: flex; align-items: center; justify-content: center; font-size: 10px;
+    }
+    .visitor-card .v-form-footer {
+        display: flex; align-items: center; justify-content: space-between;
+    }
+    .visitor-card .v-input-row { display: flex; gap: 6px; align-items: center; }
+    .visitor-card .v-input {
+        flex: 1; min-width: 0; padding: 6px 8px; font-size: 9px;
+        color: var(--text-muted); background: var(--input-bg);
+        border: 1px solid var(--border); border-radius: 6px;
+        overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
+    }
+
+    .visitor-card .v-download-box {
+        display: flex; align-items: center; justify-content: space-between; gap: 6px;
+        border: 1px solid var(--border); border-radius: 8px;
+        padding: 8px 10px; background: var(--input-bg);
+    }
+    .visitor-card .v-download-link {
+        font-size: 10px; color: var(--accent); text-decoration: underline;
+    }
+    .visitor-card .v-tag {
+        font-size: 8px; color: var(--text-muted);
+        border: 1px solid var(--border); border-radius: 999px;
+        padding: 1px 6px; white-space: nowrap;
+    }
+    .visitor-card .v-note {
+        font-size: 9px; color: var(--text-muted); margin-top: 6px;
+    }
+
+    .visitor-card .v-photo {
+        min-height: 76px; display: flex; flex-direction: column;
+        align-items: center; justify-content: center; gap: 4px;
+        border: 1px solid var(--border); border-radius: 8px;
+        background: var(--input-bg); color: var(--text-muted); font-size: 9px;
+    }
+    .visitor-card .v-photo-icon { font-size: 24px; }
+
+    .visitor-card .v-ring {
+        width: 68px; height: 68px; margin: 8px auto;
+        border: 4px solid var(--border); border-top-color: var(--accent); border-radius: 50%;
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        color: var(--text-muted); font-size: 9px; text-align: center;
+    }
+    .visitor-card .v-ring b { display: block; font-size: 12px; color: var(--text); }
+
+    .visitor-card .v-cinema {
+        background: #020617; border: 1px solid rgba(255,255,255,.16); border-radius: 10px;
+        padding: 10px; color: #E2E8F0; text-align: center;
+    }
+    .visitor-card .v-cinema .v-back {
+        color: #E2E8F0; background: rgba(255,255,255,.08);
+        border-color: rgba(255,255,255,.2); box-shadow: none;
+    }
+    .visitor-card .v-credit { font-size: 9px; opacity: .85; margin: 2px 0; }
+    .visitor-card .v-gift { font-size: 26px; margin: 6px 0; }
+
+    .visitor-card .v-test-actions {
+        display: flex; gap: 6px; justify-content: center; margin-top: 8px;
+    }
+    .visitor-card .v-status {
+        display: inline-block; padding: 1px 6px; font-size: 8px;
+        border: 1px solid var(--ok); color: var(--ok);
+        border-radius: 999px; white-space: nowrap;
     }
 
     @media (max-width: 600px) {
@@ -1230,15 +1394,57 @@
             return 10 + Math.min(26, (Math.abs(a.rot) + Math.abs(b.rot)) / 10);
         }
 
-        // ========== 别的界面的元素飞进来（10 秒内必走、不可点击） ==========
+        // ========== 别的界面的元素飞进来（按站内真实页面结构静态还原，10 秒内必走、不可点击） ==========
         var VISITOR_TEMPLATES = [
-            '<div class="v-from">↗ 来自通知板</div><div class="v-title">📢 通知板</div><div class="v-desc">欢迎使用2901 Space！新功能上新~</div>',
-            '<div class="v-from">↗ 来自人机验证</div><div class="v-title">🔐 人机验证</div><div class="v-captcha"><span class="v-box">✓</span><span>我不是机器人</span></div>',
-            '<div class="v-from">↗ 来自下载页</div><div class="v-title">⬇️ 下载 2901 Island</div><div class="v-desc">点击下方按钮获取安装包</div><span class="v-btn">立即下载</span>',
-            '<div class="v-from">↗ 来自图库</div><div class="v-title">🖼️ 2901 图库</div><div class="v-desc">显示网络错误？在这里测试服务器</div>',
-            '<div class="v-from">↗ 来自彩蛋站</div><div class="v-title">🥚 彩蛋收集站</div><div class="v-desc">集齐 9 个彩蛋触发神秘事件</div>',
-            '<div class="v-from">↗ 来自神秘礼品</div><div class="v-title">🎁 神秘礼品</div><div class="v-desc">片尾字幕结束后揭晓…</div>',
-            '<div class="v-from">↗ 来自服务器测试</div><div class="v-title">🔧 服务器测试</div><div class="v-desc">/2901space/test.html</div>'
+            '<div class="v-bar"><span class="v-back">← 返回</span><span class="v-theme">🌙</span></div>' +
+            '<div class="v-card"><div class="v-head"><div class="v-title"><span class="v-hl">通知板</span></div><div class="v-sub">最新公告一览 · 也可以在下方发布通知</div></div></div>' +
+            '<div class="v-card"><div class="v-sec"><span>📋 最新通知</span><span class="v-mini-btn">🔄 刷新</span></div>' +
+                '<div class="v-notice"><div class="v-notice-head"><span class="v-author"><span class="v-dot"></span>管理员</span><span class="v-time">刚刚</span></div><div class="v-text">欢迎使用2901 Space！新功能上新~</div></div>' +
+            '</div>',
+
+            '<div class="v-bar"><span class="v-back">← 返回</span></div>' +
+            '<div class="v-card"><div class="v-head"><div class="v-title"><span class="v-hl">匿名建议</span></div><div class="v-sub">你的每一条建议，都会被认真对待</div></div></div>' +
+            '<div class="v-card"><div class="v-sec"><span>写下你的想法</span></div><div class="v-form">' +
+                '<div class="v-textarea">请在这里写下你对 2901 Space 的建议、反馈或想法…</div>' +
+                '<div class="v-slider"><div class="v-slider-fill"></div><span class="v-slider-label">按住滑块，拖动到最右侧 →</span><div class="v-slider-thumb">→</div></div>' +
+                '<div class="v-form-footer"><span class="v-label">0 / 1000</span><span class="v-submit">匿名提交</span></div>' +
+            '</div></div>',
+
+            '<div class="v-bar"><span class="v-back">← 返回</span><span class="v-theme">🌙</span></div>' +
+            '<div class="v-card"><div class="v-sec"><span>下载</span></div>' +
+                '<div class="v-download-box"><span class="v-download-link">⬇ 下载 2901 Island（Windows）</span><span class="v-tag">班级管理专用</span></div>' +
+                '<div class="v-note">安装后即可开始使用，让班级错题统计、通知与相册管理更便利。</div>' +
+            '</div>',
+
+            '<div class="v-bar"><span class="v-back">← 返回用户主页</span><span class="v-theme">🌙</span></div>' +
+            '<div class="v-card"><div class="v-head"><div class="v-title">2901 图库</div></div>' +
+                '<div class="v-input-row"><div class="v-input">请输入图片编号（例如：1）</div><span class="v-submit">获取照片</span></div>' +
+            '</div>' +
+            '<div class="v-card"><div class="v-photo"><span class="v-photo-icon">🔍</span><span>输入编号，获取你的回忆</span></div></div>',
+
+            '<div class="v-card"><div class="v-head"><div class="v-title">🥚 彩蛋集换所</div><div class="v-sub">收集散落的彩蛋，集齐九枚，解锁终极秘密。</div></div>' +
+                '<div class="v-ring">已收集<b>0/9</b></div>' +
+                '<div class="v-sec" style="display:block;margin-bottom:6px;">输入兑换码</div>' +
+                '<div class="v-input-row"><div class="v-input">例如：crackawatheqwqcode2901</div><span class="v-submit">点亮</span></div>' +
+            '</div>',
+
+            '<div class="v-cinema">' +
+                '<div class="v-back" style="display:inline-block;margin-bottom:8px;">← 返回主页</div>' +
+                '<div class="v-credit">鸣谢</div>' +
+                '<div class="v-credit">设计 / 开发 · 刘智中</div>' +
+                '<div class="v-credit">开发协助 · Deepseek</div>' +
+                '<div class="v-credit">技术支持 · Opencode / Github / Supabase</div>' +
+                '<div class="v-gift">🎁</div>' +
+                '<div class="v-credit">这是您应得的礼物</div>' +
+            '</div>',
+
+            '<div class="v-bar"><span class="v-back">← 返回</span><span class="v-theme">🌙</span></div>' +
+            '<div class="v-card"><div class="v-head"><div class="v-title"><span class="v-hl">Supabase 服务连通测试</span></div><div class="v-sub">测试地址：<span class="v-code">htufjnhmowvfocwukrft.supabase.co</span></div></div>' +
+                '<div class="v-test-actions"><span class="v-submit">🧪 开始测试</span><span class="v-mini-btn">复制日志</span></div>' +
+            '</div>' +
+            '<div class="v-card"><div class="v-sec"><span>🔍 检测结果</span></div>' +
+                '<div class="v-result"><div class="v-notice-head"><span class="v-author"><span class="v-dot"></span>PostgREST / notice</span><span class="v-status">✅ 正常</span></div><div class="v-text">服务已响应</div></div>' +
+            '</div>'
         ];
 
         function spawnVisitor(now) {
