@@ -129,6 +129,43 @@
     .denied-title { font-size: 1.5em; font-weight: normal; margin-bottom: 10px; }
     .denied-desc { color: var(--text-muted); margin-bottom: 24px; }
     .btn-link { display: inline-block; padding: 10px 24px; color: var(--btn-text); background: var(--btn-bg); border-radius: 10px; text-decoration: none; }
+
+    /* ========== 导出 PDF ========== */
+    .export-card { text-align: center; }
+    .export-pdf-btn {
+        display: inline-flex; align-items: center; gap: 8px;
+        padding: 12px 28px; font-size: 1em; font-family: inherit;
+        color: var(--btn-text); background: var(--btn-bg);
+        border: none; border-radius: 12px; cursor: pointer;
+        box-shadow: 0 6px 18px rgba(14, 165, 233, 0.25);
+        transition: transform 0.2s, box-shadow 0.2s, opacity 0.2s;
+    }
+    .export-pdf-btn:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 26px rgba(14, 165, 233, 0.35);
+    }
+    .export-pdf-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; box-shadow: none; }
+    .export-note { font-size: 0.85em; color: var(--text-muted); margin-top: 10px; }
+
+    /* 导出瞬间：强制浅色、去动画、去模糊，保证 PDF 干净 */
+    body.pdf-exporting,
+    body.pdf-exporting * {
+        animation: none !important;
+        transition: none !important;
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+    }
+    body.pdf-exporting .card {
+        background: #ffffff !important;
+        box-shadow: none !important;
+        border-color: #CBD5E1 !important;
+    }
+    body.pdf-exporting .refresh-btn,
+    body.pdf-exporting .export-pdf-btn,
+    body.pdf-exporting .export-note,
+    body.pdf-exporting .back-home,
+    body.pdf-exporting #themeToggle { display: none !important; }
+
     @media (max-width: 600px) {
         body { padding: 76px 14px 32px; }
         .card { padding: 20px 18px; }
@@ -195,7 +232,16 @@
             <div id="detailList"></div>
         </div>
 
+        <div class="card export-card">
+            <button class="export-pdf-btn" id="exportPdfBtn">📄 导出结果为 PDF</button>
+            <p class="export-note">导出时会自动使用浅色模式，导出完成后恢复当前主题。</p>
+        </div>
+
     </div>
+
+    <!-- PDF 依赖：jsDelivr 优先，失败自动切 unpkg -->
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js" onerror="this.onerror=null;this.src='https://unpkg.com/html2canvas@1.4.1/dist/html2canvas.min.js';"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js" onerror="this.onerror=null;this.src='https://unpkg.com/jspdf@2.5.2/dist/jspdf.umd.min.js';"></script>
 
     <script>
         function safeGet(k){ try { return localStorage.getItem(k); } catch(e){ return null; } }
@@ -407,6 +453,96 @@
         }
 
         document.getElementById('refreshBtn').addEventListener('click', loadResults);
+
+        /* ========== 导出 PDF（强制浅色） ========== */
+        var exportBtn = document.getElementById('exportPdfBtn');
+
+        function sleep(ms) {
+            return new Promise(function (resolve) { setTimeout(resolve, ms); });
+        }
+
+        async function exportPDF() {
+            if (typeof html2canvas !== 'function' || !window.jspdf || !window.jspdf.jsPDF) {
+                alert('PDF 组件加载失败，请检查网络后刷新页面再试。');
+                return;
+            }
+
+            var oldLabel = exportBtn.textContent;
+            exportBtn.disabled = true;
+            exportBtn.textContent = '⏳ 正在生成 PDF…';
+
+            // 关键：先记住原主题，再强制切到浅色
+            var oldTheme = root.getAttribute('data-theme') || 'light';
+            root.setAttribute('data-theme', 'light');
+            document.body.classList.add('pdf-exporting');
+
+            try {
+                // 等两帧，确保浅色变量和隐藏按钮生效
+                await new Promise(function (resolve) {
+                    requestAnimationFrame(function () {
+                        requestAnimationFrame(resolve);
+                    });
+                });
+                await sleep(150);
+
+                var target = document.querySelector('.container');
+
+                var canvas = await html2canvas(target, {
+                    scale: 2,
+                    useCORS: true,
+                    backgroundColor: '#ffffff',
+                    logging: false,
+                    scrollX: 0,
+                    scrollY: -window.scrollY,
+                    windowWidth: document.documentElement.scrollWidth,
+                    windowHeight: document.documentElement.scrollHeight
+                });
+
+                var imgData = canvas.toDataURL('image/jpeg', 0.95);
+
+                var pdf = new window.jspdf.jsPDF({
+                    orientation: 'portrait',
+                    unit: 'pt',
+                    format: 'a4',
+                    compress: true
+                });
+
+                var pageWidth  = pdf.internal.pageSize.getWidth();
+                var pageHeight = pdf.internal.pageSize.getHeight();
+                var margin = 24;
+                var usableW = pageWidth - margin * 2;
+                var usableH = pageHeight - margin * 2;
+
+                var imgH = canvas.height * usableW / canvas.width;
+                var remaining = imgH - usableH;
+
+                pdf.addImage(imgData, 'JPEG', margin, margin, usableW, imgH, undefined, 'FAST');
+
+                while (remaining > 0) {
+                    pdf.addPage();
+                    var y = margin - (imgH - remaining);
+                    pdf.addImage(imgData, 'JPEG', margin, y, usableW, imgH, undefined, 'FAST');
+                    remaining -= usableH;
+                }
+
+                var d = new Date();
+                var stamp = d.getFullYear() +
+                    String(d.getMonth() + 1).padStart(2, '0') +
+                    String(d.getDate()).padStart(2, '0');
+                pdf.save('错题统计结果_' + stamp + '.pdf');
+            } catch (e) {
+                console.error(e);
+                alert('导出失败：' + (e && e.message ? e.message : e));
+            } finally {
+                // 无论如何都恢复原主题和按钮
+                document.body.classList.remove('pdf-exporting');
+                root.setAttribute('data-theme', oldTheme);
+                exportBtn.disabled = false;
+                exportBtn.textContent = oldLabel;
+            }
+        }
+
+        exportBtn.addEventListener('click', exportPDF);
 
         /* ========== 初始化 ========== */
         (async function init() {
