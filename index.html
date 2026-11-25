@@ -428,6 +428,9 @@
     .footer { color: var(--text-muted); font-size: 0.95em; }
 
     .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
         padding: 10px 22px;
         border-radius: 10px;
         border: 1px solid var(--border);
@@ -435,6 +438,7 @@
         color: var(--text);
         font-size: 0.95em;
         font-family: inherit;
+        text-decoration: none;
         cursor: pointer;
         backdrop-filter: blur(6px);
         transition: background 0.2s, transform 0.15s, color 0.2s, border-color 0.2s;
@@ -609,7 +613,7 @@
             <h2 class="section-title">宣传栏</h2>
             <div class="notice">
                 <p><strong>-提示</strong></p>
-                <p>欢迎使用2901 Space！新功能上新~</p>
+                <p>欢迎使用2901 Space！<a href="https://pillager-outpost.github.io/2901space/about.html#updates">点击此处查看更新日志</a></p>
             </div>
             <a class="feature-btn" href="https://pillager-outpost.github.io/2901space/introduction.html">📖 介绍与下载</a>
         </div>
@@ -656,9 +660,9 @@
                 <p>下次可能的更新：优化动画</p>
             </div>
             <div style="margin-top:20px">
-                <button id="themeToggle" class="btn">🌙 深色模式</button>
+                <button id="themeToggle" class="btn" type="button">🌙 深色模式</button>
+                <a class="btn" style="margin-left:10px" href="https://pillager-outpost.github.io/2901space/minesweeper.html">💣 扫雷</a>
             </div>
-            <p style="margin-top:16px"><a href="https://pillager-outpost.github.io/2901space/minesweeper.html">💣 扫雷</a></p>
         </div>
 
     </div>
