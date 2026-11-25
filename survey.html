@@ -255,7 +255,7 @@
                     <span class="swatch" data-color="#F59E0B" style="background:#F59E0B;"></span>
                     <input type="color" id="customCanvasColor" value="#1E293B" title="自定义颜色">
                     <span class="canvas-tool-label">粗细</span>
-                    <input type="range" id="canvasBrushSize" min="1" max="30" value="4">
+                    <input type="range" id="canvasBrushSize" min="1" max="30" value="2">
                     <button type="button" class="tool-btn" id="canvasEraserBtn">🧽 橡皮</button>
                 </div>
                 <div class="canvas-wrap"><canvas id="board"></canvas></div>
@@ -530,7 +530,7 @@
         var bctx = board.getContext('2d');
         board.width = 1200; board.height = 800;
         var drawing = false, lastPt = null;
-        var brushColor = '#1E293B', brushWidth = 4, erasing = false;
+        var brushColor = '#1E293B', brushWidth = 2, erasing = false;
 
         function applyBrush() {
             bctx.lineCap = 'round'; bctx.lineJoin = 'round';
@@ -588,7 +588,7 @@
             applyBrush();
         });
         document.getElementById('canvasBrushSize').addEventListener('input', function (e) {
-            brushWidth = parseInt(e.target.value, 10) || 4;
+            brushWidth = parseInt(e.target.value, 10) || 2;
             applyBrush();
         });
         document.getElementById('canvasEraserBtn').addEventListener('click', function () {
