@@ -192,6 +192,12 @@
     }
     .status-badge.warn { border-color: var(--warn); color: var(--warn); }
     .status-badge.fail { border-color: var(--err); color: var(--err); }
+    .notice-tail { display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .notice-time {
+        font-size: 0.78em; color: var(--text-muted);
+        font-family: "Consolas", "Courier New", monospace;
+        white-space: nowrap;
+    }
 
     /* ========== 日志 ========== */
     .log-box {
@@ -296,6 +302,10 @@ themeToggle.addEventListener('click', function () {
 /* ========== 测试逻辑 ========== */
 let logLines = [];
 let stats = { ok:0, warn:0, fail:0 };
+let stepStart = performance.now();
+
+// 每个测试项开始前重置计时，addItem 自动计算该项耗时
+function beginStep(){ stepStart = performance.now(); }
 
 function log(line){
     logLines.push(line);
@@ -304,18 +314,22 @@ function log(line){
 
 function addItem(name, status, msg, detail){
     stats[status]++;
+    const ms = Math.max(0, Math.round(performance.now() - stepStart));
     const label = status === 'ok' ? '✅ 正常' : status === 'warn' ? '⚠️ 已响应' : '❌ 失败';
     const div = document.createElement('div');
     div.className = 'notice-item';
     div.innerHTML = `
         <div class="notice-head">
             <span class="notice-author"><span class="dot"></span>${name}</span>
-            <span class="status-badge ${status}">${label}</span>
+            <span class="notice-tail">
+                <span class="notice-time" title="本项耗时">${ms} ms</span>
+                <span class="status-badge ${status}">${label}</span>
+            </span>
         </div>
         <div class="notice-text">${msg}</div>
     `;
     resultsEl.appendChild(div);
-    log(`[${label}] ${name} :: ${msg}`);
+    log(`[${label}] ${name} (${ms} ms) :: ${msg}`);
     if (detail !== undefined && detail !== null){
         let text;
         try { text = JSON.stringify(detail, null, 2); }
@@ -347,6 +361,7 @@ async function run(){
     log('时间: ' + new Date().toLocaleString());
 
     /* 1. 加载 SDK */
+    beginStep();
     let createClient = null;
     let usedCdn = '';
     for (const cdn of CDN_LIST){
@@ -374,6 +389,7 @@ async function run(){
     });
 
     /* 2. PostgREST：notice */
+    beginStep();
     try{
         const { data, error, count } = await supabase
             .from('notice')
@@ -394,6 +410,7 @@ async function run(){
     }
 
     /* 3. PostgREST：survey_config */
+    beginStep();
     try{
         const { data, error } = await supabase
             .from('survey_config')
@@ -414,6 +431,7 @@ async function run(){
     }
 
     /* 4. Edge Function：get_user */
+    beginStep();
     try{
         const res = await fetch(`${SUPABASE_URL}/functions/v1/get_user`, {
             method:'POST',
@@ -441,6 +459,7 @@ async function run(){
     }
 
     /* 5. Auth 服务 */
+    beginStep();
     try{
         const { error } = await supabase.auth.signInWithPassword({
             email:'__supabase_test__@example.invalid',
