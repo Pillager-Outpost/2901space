@@ -254,7 +254,7 @@
         <div class="card">
             <div class="page-header">
                 <h1>📊 <span class="highlight">错题统计结果</span></h1>
-                <p class="sub">按题号顺序展示各题错误人数（&gt; 5 人标红）</p>
+                <p class="sub">按提交页（survey.html）的分组与题目顺序展示各题错误人数（&gt; 5 人标红）</p>
             </div>
         </div>
 
@@ -477,10 +477,39 @@
         var resultList = document.getElementById('resultList');
         var detailList = document.getElementById('detailList');
 
+        // 与 survey.html 保持一致：先按 config.groups 的分组顺序，再按组内 questions 顺序
+        function groupIndexOf(item, groups) {
+            for (var i = 0; i < groups.length; i++) {
+                if (item.group !== undefined && groups[i].id !== undefined &&
+                    String(groups[i].id) === String(item.group)) return i;
+                if (item.groupName && groups[i].name === item.groupName) return i;
+            }
+            return groups.length; // 配置里找不到的排到最后
+        }
+        function questionIndexOf(item, groups, gi) {
+            var g = groups[gi];
+            var qs = (g && Array.isArray(g.questions)) ? g.questions : [];
+            for (var i = 0; i < qs.length; i++) {
+                if (String(qs[i]) === String(item.question)) return i;
+            }
+            return qs.length; // 配置里找不到的排到最后
+        }
+        function surveyOrderCompare(groups) {
+            return function (a, b) {
+                var ga = groupIndexOf(a, groups), gb = groupIndexOf(b, groups);
+                if (ga !== gb) return ga - gb;
+                var qa = questionIndexOf(a, groups, ga), qb = questionIndexOf(b, groups, gb);
+                if (qa !== qb) return qa - qb;
+                // 兜底：仍是自然题号排序，保证结果稳定
+                return naturalCompare(a.question, b.question)
+                    || naturalCompare(a.groupName || '', b.groupName || '');
+            };
+        }
+
         function renderResults(data) {
             var responses = data.responses || [];
             var summary  = data.summary || [];
-            var groups   = (data.config && data.config.groups) ? data.config.groups : [];
+            var groups   = (data.config && Array.isArray(data.config.groups)) ? data.config.groups : [];
 
             var people = data.respondentCount || responses.length || 0;
             var totalSelected = responses.reduce(function (s, r) {
@@ -497,12 +526,11 @@
             document.getElementById('statAvg').textContent = avg.toFixed(2);
             document.getElementById('statAvgNote').textContent = '共 ' + totalSelected + ' 人次勾选';
 
-            // ===== 错题统计结果：按题号顺序 =====
+            // ===== 错题统计结果：按 survey.html 的分组 / 题目顺序 =====
             resultList.innerHTML = '';
-            var items = summary.slice().sort(function (a, b) {
-                return naturalCompare(a.question, b.question)
-                    || naturalCompare(a.groupName || '', b.groupName || '');
-            });
+            var surveyCompare = surveyOrderCompare(groups);
+            // 有配置时按配置顺序排；没有配置就保留接口返回的顺序，不再强行按题号重排
+            var items = groups.length ? summary.slice().sort(surveyCompare) : summary.slice();
             document.getElementById('qCountNote').textContent = '共 ' + items.length + ' 题';
 
             if (!items.length) {
@@ -550,7 +578,7 @@
                     item.appendChild(el('div', 'student-none', '（本次未勾选薄弱题号）'));
                 } else {
                     var chips = el('div', 'student-chips');
-                    selected.forEach(function (s) {
+                    selected.slice().sort(surveyCompare).forEach(function (s) {
                         var label = s.question;
                         var g = groups.filter(function (x) { return x.id === s.group; })[0];
                         if (g) label = g.name + ' · ' + s.question;
@@ -629,20 +657,9 @@
                 });
                 await sleep(150);
 
-                var target = document.querySelector('.container');
-
-                var canvas = await html2canvas(target, {
-                    scale: 2,
-                    useCORS: true,
-                    backgroundColor: '#ffffff',
-                    logging: false,
-                    scrollX: 0,
-                    scrollY: -window.scrollY,
-                    windowWidth: document.documentElement.scrollWidth,
-                    windowHeight: document.documentElement.scrollHeight
-                });
-
-                var imgData = canvas.toDataURL('image/jpeg', 0.95);
+                // 逐卡片截图：整块放不下就挪到下一页；只有超长卡片才按页裁切
+                var cards = Array.prototype.slice.call(document.querySelectorAll('.container > .card'))
+                    .filter(function (node) { return window.getComputedStyle(node).display !== 'none'; });
 
                 var pdf = new window.jspdf.jsPDF({
                     orientation: 'portrait',
@@ -654,19 +671,73 @@
                 var pageWidth  = pdf.internal.pageSize.getWidth();
                 var pageHeight = pdf.internal.pageSize.getHeight();
                 var margin = 24;
+                var gap = 14;
                 var usableW = pageWidth - margin * 2;
-                var usableH = pageHeight - margin * 2;
+                var pageBottom = pageHeight - margin;
+                var cursorY = margin;
 
-                var imgH = canvas.height * usableW / canvas.width;
-                var remaining = imgH - usableH;
+                var captureOptions = {
+                    scale: 2,
+                    useCORS: true,
+                    backgroundColor: '#ffffff',
+                    logging: false,
+                    scrollX: 0,
+                    scrollY: -window.scrollY,
+                    windowWidth: document.documentElement.scrollWidth,
+                    windowHeight: document.documentElement.scrollHeight
+                };
 
-                pdf.addImage(imgData, 'JPEG', margin, margin, usableW, imgH, undefined, 'FAST');
+                function addCanvasPart(canvas, sy, sh, drawH) {
+                    var part = canvas;
+                    if (sy > 0 || sh < canvas.height) {
+                        part = document.createElement('canvas');
+                        part.width = canvas.width;
+                        part.height = sh;
+                        part.getContext('2d').drawImage(
+                            canvas, 0, sy, canvas.width, sh, 0, 0, canvas.width, sh
+                        );
+                    }
+                    pdf.addImage(part.toDataURL('image/jpeg', 0.95), 'JPEG', margin, cursorY, usableW, drawH, undefined, 'FAST');
+                    cursorY += drawH;
+                }
 
-                while (remaining > 0) {
-                    pdf.addPage();
-                    var y = margin - (imgH - remaining);
-                    pdf.addImage(imgData, 'JPEG', margin, y, usableW, imgH, undefined, 'FAST');
-                    remaining -= usableH;
+                for (var i = 0; i < cards.length; i++) {
+                    if (!cards[i].getBoundingClientRect().height) continue;
+
+                    var canvas = await html2canvas(cards[i], captureOptions);
+                    var imgH = canvas.height * usableW / canvas.width;
+
+                    // 当前页剩余空间不够就换页，避免把卡片从中间撕开
+                    if (cursorY > margin && cursorY + imgH > pageBottom + 0.1) {
+                        pdf.addPage();
+                        cursorY = margin;
+                    }
+
+                    if (cursorY + imgH <= pageBottom + 0.1) {
+                        addCanvasPart(canvas, 0, canvas.height, imgH);
+                        cursorY += gap;
+                    } else {
+                        // 卡片本身超过一页：逐页裁切，每页只画属于自己的那一段
+                        var pxPerPt = canvas.width / usableW;
+                        var sy = 0;
+                        while (sy < canvas.height) {
+                            var availPt = pageBottom - cursorY;
+                            var sh = Math.min(canvas.height - sy, Math.floor(availPt * pxPerPt));
+                            if (sh <= 0) {
+                                pdf.addPage();
+                                cursorY = margin;
+                                continue;
+                            }
+                            var drawH = sh / pxPerPt;
+                            addCanvasPart(canvas, sy, sh, drawH);
+                            sy += sh;
+                            if (sy < canvas.height) {
+                                pdf.addPage();
+                                cursorY = margin;
+                            }
+                        }
+                        cursorY += gap;
+                    }
                 }
 
                 var d = new Date();
